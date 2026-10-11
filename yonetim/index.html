@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BABDER Yönetim Paneli</title>
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="/css/panel.css">
+</head>
+<body class="panel-govde">
+  <aside class="panel-kenar">
+    <div class="kenar-ust">
+      <span>BABDER YÖNETİM</span>
+    </div>
+    <ul class="kenar-menu">
+      <li><a href="#pano" class="aktif" data-modul="pano">Pano</a></li>
+      <li><a href="#haberler" data-modul="haberler">Haberler</a></li>
+      <li><a href="#duyurular" data-modul="duyurular">Duyurular</a></li>
+      <li><a href="#etkinlikler" data-modul="etkinlikler">Etkinlikler</a></li>
+      <li><a href="#galeri" data-modul="galeri">Galeri</a></li>
+      <li><a href="#koyler" data-modul="koyler">Köylerimiz</a></li>
+      <li><a href="#basvurular" data-modul="basvurular">Başvurular</a></li>
+      <li><a href="#mesajlar" data-modul="mesajlar">Mesajlar</a></li>
+      <li><a href="#uyeler" data-modul="uyeler">Üyeler & Aidat</a></li>
+      <li><a href="#medya" data-modul="medya">Medya Kütüphanesi</a></li>
+      <li><a href="#ayarlar" data-modul="ayarlar">Site Ayarları</a></li>
+      <li><a href="#guvenlik" data-modul="guvenlik">Güvenlik & Denetim</a></li>
+    </ul>
+    <div style="padding: 1rem; border-top: 1px solid var(--renk-sinir);">
+      <button id="cikis-btn" class="btn btn-ikincil" style="width: 100%;">Güvenli Çıkış</button>
+    </div>
+  </aside>
+
+  <div class="panel-ana-icerik">
+    <header class="panel-ust-cubuk">
+      <div>
+        <span id="aktif-sayfa-baslik" style="font-weight: 700;">Yönetim Panosu</span>
+      </div>
+      <div style="display: flex; gap: 1rem; align-items: center;">
+        <span style="font-size: 0.85rem; color: var(--renk-metin-soluk);">Kısayol: Ctrl+K</span>
+        <span id="yonetici-adi" style="font-weight: 600;">Yönetici</span>
+      </div>
+    </header>
+
+    <main id="modul-alani" class="panel-icerik-alani">
+    </main>
+  </div>
+
+  <div id="komut-paleti" class="komut-paleti-arkaplan" style="display: none;">
+    <div class="komut-paleti-kutu">
+      <input type="text" id="komut-input" class="komut-paleti-input" placeholder="Sayfa veya işlem arayın... (Esc ile çıkış)">
+      <div id="komut-sonuclar" style="max-height: 250px; overflow-y: auto;"></div>
+    </div>
+  </div>
+
+  <script type="module" src="/js/panel/core.js"></script>
+</body>
+</html>

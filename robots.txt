@@ -1,0 +1,5 @@
+User-agent: *
+Disallow: /yonetim/
+Disallow: /bakim.html
+
+Sitemap: https://[ALAN-ADINIZ]/sitemap.xml

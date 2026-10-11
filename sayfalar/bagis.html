@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bağış ve Destek | BABDER</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="header-icerik">
+      <a href="/" class="marka-alani"><span class="marka-baslik">BABDER</span></a>
+    </div>
+  </header>
+
+  <main class="kapsayici" style="padding: 3rem 1rem;">
+    <h1>Derneğimize Destek Olun</h1>
+    
+    <div class="kart" style="background-color: var(--renk-bugday); border-left: 5px solid var(--renk-ana); margin: 1.5rem 0;">
+      <p><strong>Yasal Bilgilendirme:</strong> Bu sayfa yalnızca derneğimizin tüzük hedeflerini gerçekleştirmek üzere resmi banka hesap bilgilerini paylaşmaktadır. Çevrim içi ödeme veya kartlı tahsilat yapılmamaktadır. Kamu yardımı toplama faaliyetleri 2860 sayılı Yardım Toplama Kanunu ve dernekler mevzuatına tabidir.</p>
+    </div>
+
+    <div class="kart" style="max-width: 650px; margin: 0 auto;">
+      <h2 class="kart-baslik">Banka Hesap Bilgileri</h2>
+      <p><strong>Hesap Sahibi:</strong> <span data-ayar="hesap_sahibi">Şanlıurfa Siverek Kapıkaya Bab Köyü ve Köyleri Derneği</span></p>
+      <p><strong>Banka:</strong> <span data-ayar="banka_adi">[BANKA ADI]</span></p>
+      <div class="form-grup" style="margin-top: 1rem;">
+        <label for="iban-kutusu">IBAN:</label>
+        <input type="text" id="iban-kutusu" class="form-denetim" value="[IBAN]" readonly>
+      </div>
+      <button id="iban-kopyala-btn" class="btn btn-ana" style="margin-top: 0.5rem;">IBAN'ı Kopyala</button>
+      <p id="kopyalandi-bildirim" style="color: var(--renk-ana); margin-top: 0.5rem; display: none;">IBAN panoya kopyalandı!</p>
+    </div>
+  </main>
+
+  <script type="module">
+    document.getElementById("iban-kopyala-btn")?.addEventListener("click", () => {
+      const iban = document.getElementById("iban-kutusu").value;
+      navigator.clipboard.writeText(iban).then(() => {
+        const b = document.getElementById("kopyalandi-bildirim");
+        b.style.display = "block";
+        setTimeout(() => b.style.display = "none", 3000);
+      });
+    });
+  </script>
+</body>
+</html>

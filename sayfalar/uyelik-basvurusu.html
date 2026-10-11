@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Üyelik Başvurusu | BABDER</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="header-icerik">
+      <a href="/" class="marka-alani"><span class="marka-baslik">BABDER</span></a>
+    </div>
+  </header>
+
+  <main class="kapsayici" style="padding: 3rem 1rem; max-width: 700px;">
+    <h1>Üyelik Başvuru Formu</h1>
+    <p>Derneğimize üye olmak için lütfen aşağıdaki formu eksiksiz doldurunuz.</p>
+
+    <form id="uyelik-formu" class="kart" style="margin-top: 1.5rem;">
+      <div class="bal-kupugu" aria-hidden="true">
+        <label for="websitesi_referans">Bu alanı boş bırakın</label>
+        <input type="text" id="websitesi_referans" name="websitesi_referans" tabindex="-1" autocomplete="off">
+      </div>
+
+      <div class="form-grup">
+        <label for="ad_soyad">Adınız Soyadınız *</label>
+        <input type="text" id="ad_soyad" class="form-denetim" required minlength="3">
+      </div>
+
+      <div class="form-grup">
+        <label for="telefon">Telefon Numaranız *</label>
+        <input type="tel" id="telefon" class="form-denetim" required placeholder="05XXXXXXXXX" minlength="10">
+      </div>
+
+      <div class="form-grup">
+        <label for="eposta">E-Posta Adresiniz *</label>
+        <input type="email" id="eposta" class="form-denetim" required>
+      </div>
+
+      <div class="form-grup">
+        <label for="koy_bagi">Köy Bağı / İrtibat *</label>
+        <input type="text" id="koy_bagi" class="form-denetim" required placeholder="Kapıkaya Bab Köyü vb.">
+      </div>
+
+      <div class="form-grup">
+        <label for="mesaj">Varsa Eklemek İstedikleriniz</label>
+        <textarea id="mesaj" class="form-denetim" rows="4"></textarea>
+      </div>
+
+      <div class="form-grup" style="flex-direction: row; align-items: flex-start; gap: 0.5rem;">
+        <input type="checkbox" id="kvkk_onay" required>
+        <label for="kvkk_onay" style="font-weight: normal; font-size: 0.85rem;">
+          <a href="/sayfalar/kvkk.html" target="_blank" rel="noopener noreferrer">KVKK Aydınlatma Metni</a>'ni okudum, kişisel verilerimin tüzük amaçları doğrultusunda işlenmesini kabul ediyorum.
+        </label>
+      </div>
+
+      <button type="submit" class="btn btn-ana" style="margin-top: 1rem;">Başvuruyu Gönder</button>
+      <div id="form-sonuc" style="margin-top: 1rem;" role="alert"></div>
+    </form>
+  </main>
+
+  <script type="module">
+    import { db } from "/js/api.js";
+
+    document.getElementById("uyelik-formu")?.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const sonucAlani = document.getElementById("form-sonuc");
+      
+      if (document.getElementById("websitesi_referans").value) {
+        sonucAlani.textContent = "Hatalı işlem tespit edildi.";
+        return;
+      }
+
+      const veri = {
+        ad_soyad: document.getElementById("ad_soyad").value.trim(),
+        telefon: document.getElementById("telefon").value.trim(),
+        eposta: document.getElementById("eposta").value.trim(),
+        koy_bagi: document.getElementById("koy_bagi").value.trim(),
+        mesaj: document.getElementById("mesaj").value.trim(),
+        kvkk_onay: document.getElementById("kvkk_onay").checked
+      };
+
+      try {
+        await db.insert("uyelik_basvurulari", veri);
+        sonucAlani.textContent = "Başvurunuz başarıyla iletildi. Yönetim kurulumuz sizinle irtibata geçecektir.";
+        document.getElementById("uyelik-formu").reset();
+      } catch (err) {
+        sonucAlani.textContent = "Başvuru iletilirken bir hata oluştu. Lütfen bilgilerinizi kontrol ediniz.";
+      }
+    });
+  </script>
+</body>
+</html>

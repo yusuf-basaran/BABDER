@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>İletişim | BABDER</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="header-icerik">
+      <a href="/" class="marka-alani"><span class="marka-baslik">BABDER</span></a>
+    </div>
+  </header>
+
+  <main class="kapsayici" style="padding: 3rem 1rem;">
+    <h1>İletişim</h1>
+    <div class="izgara-3">
+      <div class="kart">
+        <h2 class="kart-baslik">Dernek Merkezi</h2>
+        <p><strong>Adres:</strong> <span data-ayar="adres">[DERNEK ADRESİ]</span></p>
+        <p><strong>Telefon:</strong> <span data-ayar="telefon">[TELEFON NUMARASI]</span></p>
+        <p><strong>E-Posta:</strong> <span data-ayar="eposta">[E-POSTA ADRESİ]</span></p>
+        <p style="margin-top: 1rem;">
+          <a href="https://maps.google.com/?q=[DERNEK+KONUMU]" target="_blank" rel="noopener noreferrer" class="btn btn-ikincil">Haritada Aç</a>
+        </p>
+      </div>
+
+      <form id="iletisim-formu" class="kart" style="grid-column: span 2;">
+        <h2 class="kart-baslik">Bize Ulaşın</h2>
+        <div class="bal-kupugu" aria-hidden="true">
+          <input type="text" id="guvenlik_kodu" tabindex="-1">
+        </div>
+
+        <div class="form-grup">
+          <label for="iletisim_ad">Adınız Soyadınız *</label>
+          <input type="text" id="iletisim_ad" class="form-denetim" required>
+        </div>
+
+        <div class="form-grup">
+          <label for="iletisim_eposta">E-Posta Adresiniz *</label>
+          <input type="email" id="iletisim_eposta" class="form-denetim" required>
+        </div>
+
+        <div class="form-grup">
+          <label for="iletisim_konu">Konu *</label>
+          <input type="text" id="iletisim_konu" class="form-denetim" required>
+        </div>
+
+        <div class="form-grup">
+          <label for="iletisim_mesaj">Mesajınız *</label>
+          <textarea id="iletisim_mesaj" class="form-denetim" rows="5" required minlength="10"></textarea>
+        </div>
+
+        <div class="form-grup" style="flex-direction: row; gap: 0.5rem;">
+          <input type="checkbox" id="iletisim_kvkk" required>
+          <label for="iletisim_kvkk" style="font-size: 0.85rem;">
+            Mesajımın işlenmesi için <a href="/sayfalar/kvkk.html" target="_blank" rel="noopener noreferrer">Aydınlatma Metni</a>'ni onaylıyorum.
+          </label>
+        </div>
+
+        <button type="submit" class="btn btn-ana">Gönder</button>
+        <div id="mesaj-durum" style="margin-top: 1rem;"></div>
+      </form>
+    </div>
+  </main>
+
+  <script type="module">
+    import { db } from "/js/api.js";
+
+    document.getElementById("iletisim-formu")?.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      if (document.getElementById("guvenlik_kodu").value) return;
+
+      const veri = {
+        ad_soyad: document.getElementById("iletisim_ad").value.trim(),
+        eposta: document.getElementById("iletisim_eposta").value.trim(),
+        konu: document.getElementById("iletisim_konu").value.trim(),
+        mesaj: document.getElementById("iletisim_mesaj").value.trim(),
+        kvkk_onay: document.getElementById("iletisim_kvkk").checked
+      };
+
+      try {
+        await db.insert("iletisim_mesajlari", veri);
+        document.getElementById("mesaj-durum").textContent = "Mesajınız alındı, en kısa sürede dönüş yapılacaktır.";
+        document.getElementById("iletisim-formu").reset();
+      } catch (err) {
+        document.getElementById("mesaj-durum").textContent = "Mesaj iletilemedi.";
+      }
+    });
+  </script>
+</body>
+</html>

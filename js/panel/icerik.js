@@ -55,7 +55,10 @@ export async function haberModulunuYukle(kapsayici) {
   }
 }
 
-function haberFormuAc(kapsayici, haber = null) {
+async function haberFormuAc(kapsayici, haber = null) {
+  const editorYayinlayabilir = window.BABDER_ROLE === "admin" || await db.select("ayarlar", "anahtar=eq.editor_yayinlayabilir&select=deger&limit=1")
+    .then(rows => rows[0]?.deger === "true").catch(() => false);
+  const durumlar = editorYayinlayabilir || haber?.durum === "yayinda" ? DURUMLAR : DURUMLAR.filter(durum => durum !== "yayinda");
   const kapakGorseli = gorselAlaniniOlustur(haber?.kapak_gorseli || "");
   const alan = (etiket, ad, deger = "", tur = "input") => {
     const kontrol = tur === "textarea"
@@ -72,8 +75,9 @@ function haberFormuAc(kapsayici, haber = null) {
     alan("Slug", "slug", haber?.slug || ""),
     el("label", { style: "display:grid;gap:.35rem;margin:.75rem 0;", text: "Kapak görseli" }, [kapakGorseli.root]),
     el("label", { style: "display:grid;gap:.35rem;margin:.75rem 0;", text: "Durum" }, [
-      el("select", { name: "durum", class: "form-denetim" }, DURUMLAR.map(d => el("option", { value: d, text: d, selected: (haber?.durum || "taslak") === d })))
+      el("select", { name: "durum", class: "form-denetim" }, durumlar.map(d => el("option", { value: d, text: d, selected: (haber?.durum || "taslak") === d })))
     ]),
+    ...(!editorYayinlayabilir && window.BABDER_ROLE === "editor" ? [el("p", { class: "form-yardim", role: "status", text: "Yayın yetkisi kapalı. Kaydettiğiniz haber inceleme durumunda kalır." })] : []),
     el("div", { style: "display:flex;gap:.5rem;" }, [
       el("button", { class: "btn btn-ana", type: "submit", text: "Kaydet" }),
       el("button", { class: "btn btn-ikincil", type: "button", text: "Vazgeç", onclick: () => form.remove() })

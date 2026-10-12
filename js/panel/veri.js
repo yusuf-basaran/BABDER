@@ -82,6 +82,12 @@ export async function veriModulunuYukle(root, key) {
 async function kayitFormu(root, cfg, row = null) {
   const form = el("form", { class: "kart", style: "max-width:760px;margin:1rem 0;" });
   form.appendChild(el("h3", { text: row ? "Kaydı düzenle" : "Yeni kayıt" }));
+  const yayinDurumTablolari = new Set(["sayfalar", "haberler", "duyurular", "etkinlikler"]);
+  let editorYayinlayabilir = window.BABDER_ROLE === "admin";
+  if (window.BABDER_ROLE === "editor" && yayinDurumTablolari.has(cfg.table)) {
+    editorYayinlayabilir = await db.select("ayarlar", "anahtar=eq.editor_yayinlayabilir&select=deger&limit=1")
+      .then(rows => rows[0]?.deger === "true").catch(() => false);
+  }
   const controls = {};
   const imageFields = {};
   let albums = [];
@@ -97,7 +103,13 @@ async function kayitFormu(root, cfg, row = null) {
   for (const field of cfg.fields) {
     const attrs = { name: field.name, class: "form-denetim", required: !field.nullable };
     if (field.type === "textarea") controls[field.name] = el("textarea", { ...attrs, rows: 4, text: row?.[field.name] ?? "" });
-    else if (field.type === "select") controls[field.name] = el("select", attrs, field.options.map(([value, label]) => el("option", { value, text: label, selected: (row?.[field.name] ?? field.options[0][0]) === value })));
+    else if (field.type === "select") {
+      let options = field.options;
+      if (field.name === "durum" && !editorYayinlayabilir && yayinDurumTablolari.has(cfg.table)) {
+        options = options.filter(([value]) => value !== "yayinda" || row?.durum === "yayinda");
+      }
+      controls[field.name] = el("select", attrs, options.map(([value, label]) => el("option", { value, text: label, selected: (row?.[field.name] ?? options[0][0]) === value })));
+    }
     else if (field.type === "album") controls[field.name] = el("select", attrs, [el("option", { value: "", text: "Albüm seçmeden ekle", selected: !row?.album_id }), ...albums.map(album => el("option", { value: album.id, text: album.baslik, selected: row?.album_id === album.id }))]);
     else if (field.type === "page") controls[field.name] = el("select", attrs, [el("option", { value: "", text: "Sayfa seçin" }), ...pages.map(page => el("option", { value: page.id, text: `${page.baslik} (${page.slug})`, selected: row?.sayfa_id === page.id }))]);
     else if (field.type === "image") {
@@ -112,6 +124,9 @@ async function kayitFormu(root, cfg, row = null) {
       controls[field.name] = el("input", inputAttrs);
     }
     form.appendChild(el("label", { class: "form-grup", style: "display:block;margin:.6rem 0;", text: field.label }, [field.type === "image" ? imageFields[field.name].root : controls[field.name]]));
+  }
+  if (window.BABDER_ROLE === "editor" && yayinDurumTablolari.has(cfg.table) && !editorYayinlayabilir) {
+    form.appendChild(el("p", { class: "form-yardim", role: "status", text: "Yayın yetkisi kapalı. Yeni içerikler inceleme durumunda kalır." }));
   }
   form.append(el("button", { class: "btn btn-ana", type: "submit", text: "Kaydet" }), el("button", { class: "btn btn-ikincil", type: "button", text: "Vazgeç", onclick: () => form.remove() }));
   form.addEventListener("submit", async event => {

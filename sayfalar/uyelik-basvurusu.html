@@ -7,6 +7,8 @@
   <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
+  <a href="#ana-icerik" class="erisebilirlik-atla">Ana içeriğe geç</a>
+  <aside id="duyuru-bandi" class="duyuru-bandi gizli" role="status" aria-live="polite"></aside>
   <header class="site-header">
     <div class="header-icerik">
       <a href="/" class="marka-alani"><span class="marka-baslik">BABDER</span></a>
@@ -56,40 +58,21 @@
       </div>
 
       <button type="submit" class="btn btn-ana" style="margin-top: 1rem;">Başvuruyu Gönder</button>
-      <div id="form-sonuc" style="margin-top: 1rem;" role="alert"></div>
+      <div id="form-sonuc" style="margin-top: 1rem;" role="status" aria-live="polite"></div>
     </form>
   </main>
 
-  <script type="module">
-    import { db } from "/js/api.js";
+  <footer class="site-footer">
+    <div class="kapsayici izgara-3">
+      <section><h2>BABDER</h2><p data-ayar="dernek_unvan">Şanlıurfa Siverek Kapıkaya Bab Köyü ve Köyleri Sosyal Yardımlaşma ve Dayanışma Derneği</p></section>
+      <section><h2>İletişim</h2><p data-ayar="adres">Adres bilgisi yükleniyor…</p><p data-ayar="telefon">Telefon bilgisi yükleniyor…</p><p data-ayar="eposta">E-posta bilgisi yükleniyor…</p></section>
+      <section><h2>Yasal Bilgiler</h2><ul class="footer-link-liste"><li><a href="/sayfalar/kvkk.html">KVKK</a></li><li><a href="/sayfalar/gizlilik-politikasi.html">Gizlilik</a></li><li><a href="/sayfalar/cerez-politikasi.html">Çerezler</a></li><li><a href="/sayfalar/tuzuk-ve-belgeler.html">Tüzük ve Belgeler</a></li></ul></section>
+    </div>
+    <div class="footer-alt"><p>© 2026 BABDER. Tüm hakları saklıdır.</p></div>
+  </footer>
+  <aside id="cerez-banner" class="cerez-kapsayici gizli" role="region" aria-label="Çerez tercihleri"><div class="kapsayici"><p>Bu sitede gerekli tercihleri hatırlamak için yerel depolama kullanılır.</p><div class="cerez-aksiyonlar"><button id="cerez-kabul" class="btn btn-ana" type="button">Kabul Et</button><button id="cerez-reddet" class="btn btn-ikincil" type="button">Reddet</button><a href="/sayfalar/cerez-politikasi.html" class="btn btn-ikincil">Detaylı Bilgi</a></div></div></aside>
 
-    document.getElementById("uyelik-formu")?.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const sonucAlani = document.getElementById("form-sonuc");
-      
-      if (document.getElementById("websitesi_referans").value) {
-        sonucAlani.textContent = "Hatalı işlem tespit edildi.";
-        return;
-      }
-
-      const veri = {
-        ad_soyad: document.getElementById("ad_soyad").value.trim(),
-        telefon: document.getElementById("telefon").value.trim(),
-        eposta: document.getElementById("eposta").value.trim(),
-        koy_bagi: document.getElementById("koy_bagi").value.trim(),
-        mesaj: document.getElementById("mesaj").value.trim(),
-        kvkk_onay: document.getElementById("kvkk_onay").checked
-      };
-      veri.eposta = veri.eposta.toLocaleLowerCase("en-US");
-
-      try {
-        await db.insert("uyelik_basvurulari", veri);
-        sonucAlani.textContent = "Başvurunuz başarıyla iletildi. Yönetim kurulumuz sizinle irtibata geçecektir.";
-        document.getElementById("uyelik-formu").reset();
-      } catch (err) {
-        sonucAlani.textContent = "Başvuru iletilirken bir hata oluştu. Lütfen bilgilerinizi kontrol ediniz.";
-      }
-    });
-  </script>
+  <script type="module" src="/js/main.js"></script>
+  <script type="module" src="/js/forms.js"></script>
 </body>
 </html>

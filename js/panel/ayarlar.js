@@ -79,6 +79,14 @@ async function genelAyarlariGoster(hedef) {
     form.appendChild(grup);
   });
 
+  const editorYayinInput = el("input", {
+    type: "checkbox",
+    id: "editor-yayinlayabilir",
+    checked: ayarHarita.editor_yayinlayabilir === "true"
+  });
+  form.appendChild(el("label", { class: "form-grup", style: "display:flex;align-items:center;gap:.65rem;margin-top:1rem;", text: "Editörler içeriği doğrudan yayımlayabilsin" }, [editorYayinInput]));
+  form.appendChild(el("p", { class: "form-yardim", text: "Kapalıyken editörlerin haber, duyuru, etkinlik ve sayfaları inceleme durumunda kaydedilir." }));
+
   const kaydetBtn = el("button", { type: "submit", class: "btn btn-ana", text: "Ayarları Güncelle", style: "margin-top: 1rem;" });
   form.appendChild(kaydetBtn);
 
@@ -90,6 +98,7 @@ async function genelAyarlariGoster(hedef) {
         const yeniDeger = document.getElementById(a.id).value.trim();
         await db.update("ayarlar", a.id, { deger: yeniDeger });
       }
+      await db.update("ayarlar", "editor_yayinlayabilir", { deger: String(editorYayinInput.checked) });
       toastGoster("Genel ayarlar başarıyla kaydedildi.", "basari");
     } catch {
       toastGoster("Ayarlar güncellenirken yetki veya bağlantı hatası oluştu.", "hata");

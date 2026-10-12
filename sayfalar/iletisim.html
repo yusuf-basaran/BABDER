@@ -81,7 +81,7 @@
         <div class="form-grup"><label for="iletisim_mesaj">Mesajınız *</label><textarea id="iletisim_mesaj" class="form-denetim" rows="5" required minlength="10" maxlength="5000"></textarea></div>
         <div class="form-grup"><label><input type="checkbox" id="iletisim_kvkk" required> <a href="./kvkk.html" target="_blank" rel="noopener noreferrer">Aydınlatma Metni</a>'ni onaylıyorum.</label></div>
         <button type="submit" class="btn btn-ana">Gönder</button>
-        <div id="mesaj-durum"></div>
+        <div id="mesaj-durum" role="status" aria-live="polite"></div>
       </form>
     </div>
   </main>
@@ -116,27 +116,6 @@
   </footer>
 
   <script type="module" src="../js/main.js"></script>
-  <script type="module">
-    import { db } from "../js/api.js";
-    document.getElementById("iletisim-formu")?.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      if (document.getElementById("guvenlik_kodu").value) return;
-      const veri = {
-        ad_soyad: document.getElementById("iletisim_ad").value.trim(),
-        eposta: document.getElementById("iletisim_eposta").value.trim(),
-        konu: document.getElementById("iletisim_konu").value.trim(),
-        mesaj: document.getElementById("iletisim_mesaj").value.trim(),
-        kvkk_onay: document.getElementById("iletisim_kvkk").checked
-      };
-      veri.eposta = veri.eposta.toLocaleLowerCase("en-US");
-      try {
-        await db.insert("iletisim_mesajlari", veri);
-        document.getElementById("mesaj-durum").textContent = "Mesajınız iletildi.";
-        document.getElementById("iletisim-formu").reset();
-      } catch {
-        document.getElementById("mesaj-durum").textContent = "Mesaj iletilemedi.";
-      }
-    });
-  </script>
+  <script type="module" src="../js/forms.js"></script>
 </body>
 </html>

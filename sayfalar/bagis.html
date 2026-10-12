@@ -74,10 +74,10 @@
       <p><strong>Banka:</strong> <span data-ayar="banka_adi">[BANKA ADI]</span></p>
       <div class="form-grup">
         <label for="iban-kutusu">IBAN:</label>
-        <input type="text" id="iban-kutusu" class="form-denetim" value="[IBAN]" readonly>
+        <input type="text" id="iban-kutusu" class="form-denetim" data-ayar="iban" value="Yükleniyor…" readonly>
       </div>
-      <button id="iban-kopyala-btn" class="btn btn-ana">IBAN'ı Kopyala</button>
-      <p id="kopyalandi-bildirim" class="toast-basari gizli">IBAN panoya kopyalandı!</p>
+      <button id="iban-kopyala-btn" class="btn btn-ana" type="button" disabled>IBAN'ı Kopyala</button>
+      <p id="kopyalandi-bildirim" class="toast-basari gizli" role="status" aria-live="polite">IBAN panoya kopyalandı!</p>
     </div>
   </main>
 
@@ -111,17 +111,6 @@
   </footer>
 
   <script type="module" src="../js/main.js"></script>
-  <script type="module">
-    document.getElementById("iban-kopyala-btn")?.addEventListener("click", () => {
-      const iban = document.getElementById("iban-kutusu").value;
-      navigator.clipboard.writeText(iban).then(() => {
-        const b = document.getElementById("kopyalandi-bildirim");
-        if (b) {
-          b.classList.remove("gizli");
-          setTimeout(() => b.classList.add("gizli"), 3000);
-        }
-      });
-    });
-  </script>
+  <script type="module" src="../js/forms.js"></script>
 </body>
 </html>

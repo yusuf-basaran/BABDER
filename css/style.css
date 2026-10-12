@@ -161,6 +161,12 @@ body {
   color: var(--renk-ana);
   background: var(--renk-zemin);
 }
+.ana-menu a[aria-current="page"] {
+  color: var(--renk-ana);
+  background: var(--renk-zemin);
+}
+.ana-menu ul { gap: 0.35rem; }
+.ana-menu a { padding: 0.35rem 0.4rem; font-size: 0.9rem; }
 
 .mobil-menu-btn {
   display: none;
@@ -378,7 +384,7 @@ body {
 /* ==============================================================================
    MOBİL VE TABLET UYUMU (RESPONSIVE)
    ============================================================================== */
-@media (max-width: 900px) {
+@media (max-width: 1200px) {
   .mobil-menu-btn {
     display: inline-flex;
     align-items: center;

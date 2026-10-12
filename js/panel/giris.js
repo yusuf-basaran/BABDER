@@ -1,6 +1,8 @@
 import { db } from "../api.js";
+import { temaYonetiminiBaslat } from "../tema.js";
 
 document.addEventListener("DOMContentLoaded", () => {
+  temaYonetiminiBaslat();
   const form = document.getElementById("giris-formu");
   const btn = document.getElementById("giris-btn");
   const hataKutusu = document.getElementById("giris-hata");

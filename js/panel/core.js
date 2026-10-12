@@ -5,6 +5,7 @@ import { basvuruModulunuYukle } from "./basvurular.js";
 import { ayarlarModulunuYukle } from "./ayarlar.js";
 import { guvenlikModulunuYukle } from "./guvenlik.js";
 import { veriModulunuYukle } from "./veri.js";
+import { temaYonetiminiBaslat } from "../tema.js";
 
 const token = sessionStorage.getItem("babder_token");
 if (!token && !window.location.pathname.includes("giris.html")) {
@@ -12,6 +13,7 @@ if (!token && !window.location.pathname.includes("giris.html")) {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
+  temaYonetiminiBaslat();
   paneliBaslat();
 });
 
@@ -36,6 +38,18 @@ async function paneliBaslat() {
   komutPaletiniBaslat();
   oturumZamanAsimiDenetle();
   document.getElementById("cikis-btn")?.addEventListener("click", () => db.signOut());
+  const menuButton = document.getElementById("panel-menu-tetikleyici");
+  const sidebar = document.getElementById("panel-kenar");
+  menuButton?.addEventListener("click", () => {
+    const open = sidebar.classList.toggle("acik");
+    menuButton.setAttribute("aria-expanded", String(open));
+  });
+  sidebar?.addEventListener("click", event => {
+    if (event.target.closest("a[data-modul]")) {
+      sidebar.classList.remove("acik");
+      menuButton?.setAttribute("aria-expanded", "false");
+    }
+  });
   window.addEventListener("hashchange", modulYonlendir);
 }
 

@@ -10,7 +10,7 @@
   <link rel="stylesheet" href="/css/panel.css">
 </head>
 <body class="panel-govde">
-  <aside class="panel-kenar">
+  <aside id="panel-kenar" class="panel-kenar">
     <div class="kenar-ust">
       <span>BABDER YÖNETİM</span>
     </div>
@@ -46,9 +46,11 @@
   <div class="panel-ana-icerik">
     <header class="panel-ust-cubuk">
       <div>
+        <button id="panel-menu-tetikleyici" class="btn btn-ikincil panel-menu-btn" type="button" aria-label="Yönetim menüsünü aç/kapat" aria-expanded="false" aria-controls="panel-kenar">Menü</button>
         <span id="aktif-sayfa-baslik" style="font-weight: 700;">Yönetim Panosu</span>
       </div>
       <div style="display: flex; gap: 1rem; align-items: center;">
+        <button id="tema-degistirici" class="btn btn-ikincil" type="button" aria-label="Koyu temaya geç">Koyu tema</button>
         <span style="font-size: 0.85rem; color: var(--renk-metin-soluk);">Kısayol: Ctrl+K</span>
         <span id="yonetici-adi" style="font-weight: 600;">Yönetici</span>
       </div>

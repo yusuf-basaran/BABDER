@@ -343,6 +343,52 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, pg_temp;
 
+-- Editörlerin yayın yetkisi kapalıysa doğrudan API çağrıları da taslağa alınır.
+CREATE OR REPLACE FUNCTION editor_yayin_durumunu_kisitla()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, pg_temp
+AS $$
+DECLARE
+    editor_yayin_aktif BOOLEAN := FALSE;
+BEGIN
+    IF NEW.durum = 'yayinda'
+       AND (TG_OP = 'INSERT' OR OLD.durum IS DISTINCT FROM NEW.durum)
+       AND mevcut_kullanici_rolu() = 'editor' THEN
+        SELECT COALESCE(deger, 'false') = 'true'
+        INTO editor_yayin_aktif
+        FROM ayarlar
+        WHERE anahtar = 'editor_yayinlayabilir';
+
+        IF NOT COALESCE(editor_yayin_aktif, FALSE) THEN
+            NEW.durum := 'incelemede';
+        END IF;
+    END IF;
+    RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS editor_yayin_kisitla_sayfalar ON sayfalar;
+CREATE TRIGGER editor_yayin_kisitla_sayfalar
+BEFORE INSERT OR UPDATE OF durum ON sayfalar
+FOR EACH ROW EXECUTE FUNCTION editor_yayin_durumunu_kisitla();
+
+DROP TRIGGER IF EXISTS editor_yayin_kisitla_haberler ON haberler;
+CREATE TRIGGER editor_yayin_kisitla_haberler
+BEFORE INSERT OR UPDATE OF durum ON haberler
+FOR EACH ROW EXECUTE FUNCTION editor_yayin_durumunu_kisitla();
+
+DROP TRIGGER IF EXISTS editor_yayin_kisitla_duyurular ON duyurular;
+CREATE TRIGGER editor_yayin_kisitla_duyurular
+BEFORE INSERT OR UPDATE OF durum ON duyurular
+FOR EACH ROW EXECUTE FUNCTION editor_yayin_durumunu_kisitla();
+
+DROP TRIGGER IF EXISTS editor_yayin_kisitla_etkinlikler ON etkinlikler;
+CREATE TRIGGER editor_yayin_kisitla_etkinlikler
+BEFORE INSERT OR UPDATE OF durum ON etkinlikler
+FOR EACH ROW EXECUTE FUNCTION editor_yayin_durumunu_kisitla();
+
 INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 VALUES
     ('gorseller', 'gorseller', TRUE, 3145728, ARRAY['image/jpeg', 'image/png', 'image/webp']),

@@ -16,7 +16,7 @@ const MODULLER = {
   mesajlar: { title: "İletişim Mesajları", table: "iletisim_mesajlari", columns: ["ad_soyad", "eposta", "konu", "mesaj", "okundu", "created_at"], fields: [], softDelete: false, messages: true },
   uyeler: { title: "Üyeler", table: "uyeler", columns: ["uye_no", "ad_soyad", "telefon", "eposta", "koy_bagi", "durum"], fields: [METIN("uye_no", "Üye numarası"), METIN("ad_soyad", "Ad soyad"), METIN("telefon", "Telefon"), METIN("eposta", "E-posta", { nullable: true }), METIN("koy_bagi", "Köy bağı"), SELECT("durum", "Durum", [["aktif", "Aktif"], ["pasif", "Pasif"], ["ayrildi", "Ayrıldı"]]), METIN("giris_tarihi", "Üyelik başlangıcı", { type: "date" })], softDelete: true },
   sayfalar: { title: "Sayfalar", table: "sayfalar", columns: ["baslik", "slug", "durum"], fields: [METIN("baslik", "Başlık"), METIN("slug", "URL kısa adı"), METIN("meta_aciklama", "Meta açıklaması", { nullable: true }), SELECT("durum", "Durum", DURUM)], softDelete: true },
-  sayfa_bolumleri: { title: "Sayfa Bölümleri", table: "sayfa_bolumleri", columns: ["sayfa_id", "bolum_kodu", "baslik", "sira"], fields: [METIN("sayfa_id", "Sayfa kimliği"), METIN("bolum_kodu", "Bölüm kodu"), METIN("baslik", "Başlık", { nullable: true }), AREA("icerik", "İçerik"), METIN("sira", "Sıra", { type: "number" })], softDelete: false },
+  sayfa_bolumleri: { title: "Sayfa Bölümleri", table: "sayfa_bolumleri", columns: ["sayfa_id", "bolum_kodu", "baslik", "sira"], fields: [METIN("sayfa_id", "Sayfa", { type: "page" }), METIN("bolum_kodu", "Bölüm kodu"), METIN("baslik", "Başlık", { nullable: true }), AREA("icerik", "İçerik"), METIN("sira", "Sıra", { type: "number" })], softDelete: false },
   anasayfa: { title: "Ana sayfa bölümleri", table: "anasayfa_bolumleri", columns: ["kod", "baslik", "sira", "aktif"], fields: [METIN("kod", "Kod"), METIN("baslik", "Başlık"), METIN("alt_baslik", "Alt başlık", { nullable: true }), AREA("icerik", "İçerik"), METIN("buton_metin", "Buton metni", { nullable: true }), METIN("buton_baglanti", "Buton bağlantısı", { nullable: true }), METIN("gorsel_url", "Görsel URL", { nullable: true }), METIN("sira", "Sıra", { type: "number" }), BOOL("aktif", "Yayında")], softDelete: false },
   menu: { title: "Menü öğeleri", table: "menu_ogeleri", columns: ["baslik", "baglanti", "konum", "sira", "aktif"], fields: [METIN("baslik", "Başlık"), METIN("baglanti", "Bağlantı"), METIN("konum", "Konum"), METIN("sira", "Sıra", { type: "number" }), BOOL("aktif", "Etkin")], softDelete: false },
   kurul: { title: "Yönetim Kurulu", table: "yonetim_kurulu", columns: ["ad_soyad", "gorev", "kurul_turu", "donem", "sira"], fields: [METIN("ad_soyad", "Ad soyad"), METIN("gorev", "Görev"), METIN("kurul_turu", "Kurul türü"), METIN("donem", "Dönem"), METIN("fotograf_url", "Fotoğraf URL", { nullable: true }), METIN("sira", "Sıra", { type: "number" })], softDelete: true },
@@ -61,6 +61,7 @@ export async function veriModulunuYukle(root, key) {
       const cells = cfg.columns.map(col => {
         if (cfg.messages && col === "mesaj") return el("td", {}, [el("details", {}, [el("summary", { text: "Mesajı aç" }), el("p", { text: row.mesaj })])]);
         const value = row[col];
+        if (cfg.table === "sayfalar" && col === "slug") return el("td", {}, [el("a", { href: `/sayfalar/sayfa.html?slug=${encodeURIComponent(value)}`, target: "_blank", rel: "noopener noreferrer", text: value || "—" })]);
         const text = col.endsWith("_tarihi") || col === "created_at" ? (value ? new Date(value).toLocaleString("tr-TR") : "—") : value && typeof value === "object" ? JSON.stringify(value) : String(value ?? "—");
         return el("td", { text });
       });
@@ -82,15 +83,21 @@ async function kayitFormu(root, cfg, row = null) {
   form.appendChild(el("h3", { text: row ? "Kaydı düzenle" : "Yeni kayıt" }));
   const controls = {};
   let albums = [];
+  let pages = [];
   if (cfg.fields.some(field => field.type === "album")) {
     try { albums = await db.select("albumler", "deleted_at=is.null&order=baslik.asc"); }
     catch { toastGoster("Albüm listesi alınamadı.", "hata"); return; }
+  }
+  if (cfg.fields.some(field => field.type === "page")) {
+    try { pages = await db.select("sayfalar", "deleted_at=is.null&order=baslik.asc"); }
+    catch { toastGoster("Sayfa listesi alınamadı.", "hata"); return; }
   }
   for (const field of cfg.fields) {
     const attrs = { name: field.name, class: "form-denetim", required: !field.nullable };
     if (field.type === "textarea") controls[field.name] = el("textarea", { ...attrs, rows: 4, text: row?.[field.name] ?? "" });
     else if (field.type === "select") controls[field.name] = el("select", attrs, field.options.map(([value, label]) => el("option", { value, text: label, selected: (row?.[field.name] ?? field.options[0][0]) === value })));
     else if (field.type === "album") controls[field.name] = el("select", attrs, [el("option", { value: "", text: "Albüm seçmeden ekle", selected: !row?.album_id }), ...albums.map(album => el("option", { value: album.id, text: album.baslik, selected: row?.album_id === album.id }))]);
+    else if (field.type === "page") controls[field.name] = el("select", attrs, [el("option", { value: "", text: "Sayfa seçin" }), ...pages.map(page => el("option", { value: page.id, text: `${page.baslik} (${page.slug})`, selected: row?.sayfa_id === page.id }))]);
     else {
       const inputAttrs = { ...attrs, type: field.type };
       if (field.type === "checkbox") inputAttrs.checked = Boolean(row?.[field.name]);

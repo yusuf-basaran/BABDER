@@ -461,3 +461,5 @@ progress { width:100%;height:1.2rem;accent-color:var(--renk-ana); }
 @media(max-width:600px){.ay-takvimi{min-width:550px;}#etkinlik-ay-gorunumu{overflow-x:auto;}}
 
 .menu-ek{position:relative}.menu-ek summary{cursor:pointer;padding:.5rem;font-weight:600}.ana-menu .menu-ek-liste{position:absolute;right:0;min-width:230px;display:flex;flex-direction:column;align-items:stretch;background:var(--renk-yuzey);padding:.6rem;border:1px solid var(--renk-sinir);box-shadow:var(--golge);z-index:1000}.menu-ek-liste a{display:block}.menu-ek details:not([open]) .menu-ek-liste{display:none}@media(max-width:1200px){.ana-menu .menu-ek-liste{position:static;box-shadow:none;border:0;min-width:0}}
+
+.site-footer h2 { font-size: 1.25rem; color: inherit; }

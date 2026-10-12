@@ -1,0 +1,33 @@
+name: Site kalite kontrolleri
+on:
+  pull_request:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  site:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.25.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run build
+      - run: pnpm run check
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - run: deno check supabase/functions/form-gonder/index.ts
+      - run: pnpm exec lhci collect
+      - run: pnpm exec lhci assert
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: lighthouse-raporlari
+          path: .lighthouseci/

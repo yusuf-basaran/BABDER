@@ -6,6 +6,6 @@ export const CONFIG = {
   YER_TUTUCU_METIN: "[İÇERİK EKLENECEK]"
 };
 
-// Yayın öncesinde derneğin doğrulanmış alan adıyla değiştirin.
-export const SITE_URL = "https://[ALAN-ADINIZ]";
+// Özel alan adına geçildiğinde bu adresi güncelleyin.
+export const SITE_URL = "https://babder.vercel.app";
 export const TURNSTILE_SITE_KEY = "[TURNSTILE_SITE_KEY]";

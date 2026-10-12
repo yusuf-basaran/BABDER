@@ -7,6 +7,7 @@ import { sitemapUret } from "./sitemap.mjs";
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const output = path.join(root, "dist");
 const excluded = new Set([".git", ".github", ".vercel", "api", "dist", "node_modules", "partials", "scripts", "supabase", "README.md", "package.json", "package-lock.json"]);
+for (const name of [".htmlvalidate.json", "lighthouserc.cjs", "pnpm-lock.yaml", ".lighthouseci", ".gitignore"]) excluded.add(name);
 const base = SITE_URL.replace(/\/$/, "");
 
 await rm(output, { recursive: true, force: true });
@@ -32,7 +33,7 @@ async function expandHtml(directory) {
     html = html.replace(/<img(?![^>]*\bwidth=)([^>]*\bsrc=["']\/img\/logo-192\.webp["'][^>]*)>/gi, '<img width="192" height="192"$1>');
     const relative = path.relative(output, file).replaceAll(path.sep, "/");
     if (!relative.startsWith("yonetim/")) html = seoEtiketleriniUygula(html, relative);
-    await writeFile(file, html, "utf8");
+    await writeFile(file, html.replace(/[ \t]+$/gm, ""), "utf8");
   }
 }
 

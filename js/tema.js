@@ -6,7 +6,7 @@ export function temaYonetiminiBaslat() {
     document.documentElement.setAttribute("data-tema", dark ? "koyu" : "varsayilan");
     if (button) {
       button.textContent = dark ? "Açık tema" : "Koyu tema";
-      button.setAttribute("aria-label", dark ? "Açık temaya geç" : "Koyu temaya geç");
+      button.removeAttribute("aria-label");
       button.setAttribute("aria-pressed", String(dark));
     }
   };

@@ -15,9 +15,12 @@ async function ayarlarıVeBakimiDenetle() {
   const ayarHaritasi = {};
   ayarlar.forEach(a => ayarHaritasi[a.anahtar] = a.deger);
 
-  if (ayarHaritasi.bakim_modu === "true" && !window.location.pathname.includes("/yonetim")) {
+  const isInPages = window.location.pathname.includes("/sayfalar/");
+  const isInAdmin = window.location.pathname.includes("/yonetim/");
+
+  if (ayarHaritasi.bakim_modu === "true" && !isInAdmin) {
     if (!window.location.pathname.includes("bakim.html")) {
-      window.location.href = "/bakim.html";
+      window.location.href = isInPages ? "../bakim.html" : "./bakim.html";
     }
   }
 
@@ -73,11 +76,22 @@ async function menuyuYukle() {
 
   const veriler = await db.select("menu_ogeleri", "aktif=eq.true&konum=eq.header&order=sira.asc");
   if (veriler && veriler.length > 0) {
+    const isInPages = window.location.pathname.includes("/sayfalar/");
     menuListe.innerHTML = "";
     veriler.forEach(m => {
       const li = document.createElement("li");
       const a = document.createElement("a");
-      a.href = m.baglanti;
+      
+      let linkHref = m.baglanti;
+      if (isInPages) {
+        if (linkHref === "/" || linkHref === "./" || linkHref === "index.html") {
+          linkHref = "../index.html";
+        } else if (linkHref.startsWith("/sayfalar/")) {
+          linkHref = linkHref.replace("/sayfalar/", "./");
+        }
+      }
+      
+      a.href = linkHref;
       a.textContent = m.baslik;
       li.appendChild(a);
       menuListe.appendChild(li);

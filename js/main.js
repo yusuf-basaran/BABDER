@@ -111,16 +111,46 @@ async function haberleriYukle() {
   const home = document.getElementById("son-haberler-izgara");
   const page = document.getElementById("haber-listesi");
   const hedefler = [home, page].filter(Boolean);
-  const rows = await publicKayitlariGetir("haberler", "durum=eq.yayinda&deleted_at=is.null&order=yayin_tarihi.desc&limit=20");
+  const rows = await publicKayitlariGetir("haberler", "select=baslik,ozet,slug,kapak_gorseli,kategori,yayin_tarihi&durum=eq.yayinda&deleted_at=is.null&order=yayin_tarihi.desc&limit=500");
   if (!rows) { hedefler.forEach(el => icerikYok(el, "Haberler şu anda yüklenemiyor.")); return; }
   const gosterilecek = rows.filter(row => !row.yayin_tarihi || new Date(row.yayin_tarihi) <= new Date());
+  const search = document.getElementById("haber-arama");
+  const category = document.getElementById("haber-kategori");
+  const more = document.getElementById("haber-daha-fazla");
+  const status = document.getElementById("haber-sonuc-bilgisi");
+  let limit = 9;
+  if (category) {
+    const categories = [...new Set(gosterilecek.map(row => row.kategori).filter(Boolean))].sort((a, b) => a.localeCompare(b, "tr"));
+    category.replaceChildren(el("option", { value: "", text: "Tüm kategoriler" }), ...categories.map(name => el("option", { value: name, text: name })));
+  }
+  const drawPage = () => {
+    const query = search?.value.trim().toLocaleLowerCase("tr") || "";
+    const selectedCategory = category?.value || "";
+    const filtered = gosterilecek.filter(row => (!selectedCategory || row.kategori === selectedCategory)
+      && (!query || [row.baslik, row.ozet, row.kategori].some(value => String(value || "").toLocaleLowerCase("tr").includes(query))));
+    const visible = filtered.slice(0, limit);
+    page.replaceChildren(...visible.map(row => icerikKarti({
+      title: row.baslik,
+      text: row.ozet,
+      href: `/haber/${encodeURIComponent(row.slug)}`,
+      image: row.kapak_gorseli,
+      meta: [tarihMetni(row.yayin_tarihi), row.kategori].filter(Boolean).join(" · ")
+    })));
+    if (!visible.length) icerikYok(page, query || selectedCategory ? "Aramanızla eşleşen haber bulunamadı." : "Henüz yayınlanmış haber bulunmuyor.");
+    if (status) status.textContent = filtered.length ? `${filtered.length} haber bulundu; ${visible.length} tanesi gösteriliyor.` : "";
+    if (more) more.hidden = visible.length >= filtered.length;
+  };
+  search?.addEventListener("input", () => { limit = 9; drawPage(); });
+  category?.addEventListener("change", () => { limit = 9; drawPage(); });
+  more?.addEventListener("click", () => { limit += 9; drawPage(); });
   for (const hedef of hedefler) {
-    const liste = hedef === home ? gosterilecek.slice(0, 3) : gosterilecek;
+    if (hedef === page) { drawPage(); continue; }
+    const liste = gosterilecek.slice(0, 3);
     if (!liste.length) { icerikYok(hedef, "Henüz yayınlanmış haber bulunmuyor."); continue; }
     hedef.replaceChildren(...liste.map(row => icerikKarti({
       title: row.baslik,
       text: row.ozet,
-      href: `${window.location.pathname.includes("/sayfalar/") ? "./haber-detay.html" : "./sayfalar/haber-detay.html"}?slug=${encodeURIComponent(row.slug)}`,
+      href: `/haber/${encodeURIComponent(row.slug)}`,
       image: row.kapak_gorseli,
       meta: [tarihMetni(row.yayin_tarihi), row.kategori].filter(Boolean).join(" · ")
     })));
@@ -394,7 +424,7 @@ function googleSchemaOlustur() {
     name: "Şanlıurfa Siverek Kapıkaya Bab Köyü ve Köyleri Sosyal Yardımlaşma ve Dayanışma Derneği",
     alternateName: "BABDER",
     url: window.location.origin,
-    logo: `${window.location.origin}/img/logo.png`,
+    logo: `${window.location.origin}/img/logo-192.webp`,
     description:
       "Şanlıurfa Siverek Kapıkaya Bab Köyü ve çevre köylerinin sosyal yardımlaşma ve dayanışma derneği resmi web sitesi.",
     foundingDate: "2019",

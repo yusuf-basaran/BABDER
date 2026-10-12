@@ -442,3 +442,9 @@ body {
     display: none;
   }
 }
+
+.haber-filtreleri { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--bosluk-m); margin: 0 0 var(--bosluk-m); max-width: 760px; }
+.haber-filtreleri .form-grup { margin: 0; }
+#haber-daha-fazla { display: block; margin: var(--bosluk-l) auto 0; }
+#haber-daha-fazla[hidden] { display: none; }
+@media (max-width: 640px) { .haber-filtreleri { grid-template-columns: 1fr; } }

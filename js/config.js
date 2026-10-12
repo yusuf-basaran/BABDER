@@ -5,3 +5,6 @@ export const CONFIG = {
   VARSAYILAN_FACEBOOK: "https://www.facebook.com/share/1DsdbdzV3n/",
   YER_TUTUCU_METIN: "[İÇERİK EKLENECEK]"
 };
+
+// Yayın öncesinde derneğin doğrulanmış alan adıyla değiştirin.
+export const SITE_URL = "https://[ALAN-ADINIZ]";

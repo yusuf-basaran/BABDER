@@ -19,7 +19,9 @@ Editör yayın yetkisi kuralını mevcut veritabanına uygulamak için güncel `
 
 #### B. Kod Yapılandırması
 1. js/config.js dosyasındaki SUPABASE_URL ve SUPABASE_ANON_KEY alanlarını doldurun. (service_role anahtarını asla yazmayın!)
-2. img/logo.png yerine derneğin resmi logosunu koyun.
+2. js/config.js içindeki SITE_URL değerini yayın alan adıyla değiştirin. Bu değer canonical, Open Graph ve sitemap adreslerinde kullanılır.
+3. `npm run build` komutu ortak header/footer/çerez parçalarını statik HTML'e ekler, meta etiketlerini üretir ve `dist/` dağıtım dizinini hazırlar. Vercel bunu her dağıtımda çalıştırır.
+4. Kaynak logo `img/kaynak/logo.png` konumunda saklanır; optimize edilmiş logo, favicon ve paylaşım görseli `img/` içindedir.
 
 #### C. GitHub ve Vercel Yayını
 1. Projeyi GitHub deposuna yükleyin.

@@ -1,8 +1,16 @@
 {
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
   "cleanUrls": true,
   "trailingSlash": false,
+  "functions": {
+    "api/haber.js": {
+      "includeFiles": "dist/**/*.html"
+    }
+  },
   "rewrites": [
-    { "source": "/favicon.ico", "destination": "/img/logo.png" }
+    { "source": "/favicon.ico", "destination": "/img/favicon-32.png" },
+    { "source": "/haber/:slug", "destination": "/api/haber?slug=:slug" }
   ],
   "headers": [
     {

@@ -7,6 +7,7 @@
 
   <title>BABDER | Şanlıurfa Siverek Kapıkaya Bab Köyü ve Köyleri Sosyal Yardımlaşma ve Dayanışma Derneği</title>
   <meta name="description" content="Şanlıurfa Siverek Kapıkaya Bab Köyü ve Köyleri Sosyal Yardımlaşma ve Dayanışma Derneği (BABDER) resmi web sitesi. Birlik, beraberlik ve yardımlaşma kapısı.">
+  <meta name="keywords" content="BABDER, Kapıkaya Bab Köyü, Siverek, Şanlıurfa, Bab Köyü Derneği, Sosyal Yardımlaşma">
   <meta name="robots" content="index, follow">
   <meta name="theme-color" content="#1B7F3B">
 
@@ -20,6 +21,8 @@
   <meta property="og:title" content="BABDER | Kapıkaya Bab Köyü ve Köyleri Derneği">
   <meta property="og:description" content="Şanlıurfa Siverek Kapıkaya Bab Köyü ve Köyleri Sosyal Yardımlaşma ve Dayanışma Derneği resmi web sitesi.">
   <meta property="og:image" content="./img/logo.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:image" content="./img/logo.png">
 
   <link rel="stylesheet" href="./css/style.css">
 </head>
@@ -29,17 +32,17 @@
 
   <header class="site-header">
     <div class="header-icerik">
-      <!-- SOL TARAF: LOGO VE MARKA BAŞLIĞI -->
+      <!-- SOL: LOGO VE DERNEK ADI -->
       <a href="./index.html" class="marka-alani">
-        <img src="./img/logo.png" alt="BABDER Resmi Logosu" class="marka-logo" width="52" height="52">
+        <img src="./img/logo.png" alt="BABDER Resmi Logosu" class="marka-logo" width="48" height="48">
         <div>
           <span class="marka-baslik">BABDER</span>
           <span class="marka-alt-baslik">Kapıkaya Bab Köyü ve Köyleri Derneği</span>
         </div>
       </a>
 
-      <!-- SAĞ TARAF: MENÜ LİNKLERİ -->
-      <nav class="ana-menu" aria-label="Ana Menü">
+      <!-- SAĞ: MENÜ -->
+      <nav id="ana-navigasyon" class="ana-menu" aria-label="Ana Menü">
         <ul id="menu-liste">
           <li><a href="./index.html">Ana Sayfa</a></li>
           <li><a href="./sayfalar/hakkimizda.html">Hakkımızda</a></li>
@@ -51,7 +54,15 @@
           <li><a href="./sayfalar/iletisim.html">İletişim</a></li>
         </ul>
       </nav>
-      <button id="tema-degistirici" class="btn btn-ikincil" aria-label="Görsel Temayı Değiştir">Tema</button>
+
+      <div class="header-aksiyonlar">
+        <button id="tema-degistirici" class="btn btn-ikincil" aria-label="Görsel Temayı Değiştir">Tema</button>
+        <button id="mobil-menu-tetikleyici" class="mobil-menu-btn" aria-label="Menüyü Aç/Kapat" aria-expanded="false">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M4 6h16M4 12h16M4 18h16"></path>
+          </svg>
+        </button>
+      </div>
     </div>
   </header>
 
@@ -60,7 +71,7 @@
       <div class="kapsayici">
         <h1 id="hero-baslik">Birliğimiz, Dayanışmamız ve Geleceğimiz</h1>
         <p id="hero-alt-baslik">Kapıkaya Bab Köyü ve çevre köylerimizin kadim dayanışma ruhunu yaşatıyor, el birliğiyle geleceğe yürüyoruz.</p>
-        <div style="margin-top: 1.5rem; display: flex; gap: 1rem; flex-wrap: wrap;">
+        <div class="hero-aksiyonlar">
           <a href="./sayfalar/uyelik-basvurusu.html" class="btn btn-ana">Üyelik Başvurusu</a>
           <a href="./sayfalar/bagis.html" class="btn btn-ikincil">Bağış Bilgileri</a>
         </div>
@@ -71,14 +82,14 @@
       </svg>
     </section>
 
-    <section class="kapsayici" style="padding: 3rem 1rem;">
+    <section class="kapsayici bolum-bosluk-buyuk">
       <h2>Son Haberler ve Gelişmeler</h2>
       <div id="son-haberler-izgara" class="izgara-3">
         <p>[İÇERİK EKLENECEK]</p>
       </div>
     </section>
 
-    <section style="background-color: var(--renk-yuzey); padding: 3rem 1rem;">
+    <section class="bolum-yuzey-zemin">
       <div class="kapsayici">
         <h2>Yaklaşan Etkinlikler</h2>
         <div id="etkinlikler-izgara" class="izgara-3">
@@ -114,7 +125,7 @@
       </div>
       <div>
         <h3>Hukuki</h3>
-        <ul style="list-style: none;">
+        <ul class="footer-link-liste">
           <li><a href="./sayfalar/kvkk.html">KVKK Aydınlatma Metni</a></li>
           <li><a href="./sayfalar/gizlilik-politikasi.html">Gizlilik Politikası</a></li>
           <li><a href="./sayfalar/cerez-politikasi.html">Çerez Politikası</a></li>

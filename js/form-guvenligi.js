@@ -1,5 +1,6 @@
 import { CONFIG, TURNSTILE_SITE_KEY } from "./config.js";
 const widgets = new Map();
+export function formGonderimeHazir(form) { return Boolean(widgets.get(form)?.token); }
 
 export function formGuvenliginiBaslat() {
   const forms = [...document.querySelectorAll("#iletisim-formu, #uyelik-formu")];

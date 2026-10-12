@@ -1,4 +1,4 @@
-import { formGuvenliginiBaslat, guvenliFormGonder } from "./form-guvenligi.js";
+import { formGuvenliginiBaslat, guvenliFormGonder, formGonderimeHazir } from "./form-guvenligi.js";
 formGuvenliginiBaslat();
 
 function formSonucunuGoster(hedef, mesaj, hata = false) {
@@ -32,7 +32,7 @@ document.getElementById("iletisim-formu")?.addEventListener("submit", async even
   } catch (error) {
     formSonucunuGoster(sonuc, error.message || "Mesaj iletilemedi. Lütfen daha sonra yeniden deneyin.", true);
   } finally {
-    submit.disabled = false;
+    submit.disabled = !formGonderimeHazir(form);
   }
 });
 
@@ -61,7 +61,7 @@ document.getElementById("uyelik-formu")?.addEventListener("submit", async event 
   } catch (error) {
     formSonucunuGoster(sonuc, error.message || "Başvuru iletilemedi. Lütfen bilgilerinizi kontrol edip yeniden deneyin.", true);
   } finally {
-    submit.disabled = false;
+    submit.disabled = !formGonderimeHazir(form);
   }
 });
 

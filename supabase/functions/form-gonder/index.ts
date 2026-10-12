@@ -29,7 +29,7 @@ Deno.serve(async (req: Request) => {
     const veri = body.tur === "iletisim"
       ? { ad_soyad, eposta, kvkk_onay: true, konu: text("konu", 2, 150), mesaj: text("mesaj", 10, 5000) }
       : { ad_soyad, eposta, kvkk_onay: true, telefon: text("telefon", 10, 30), koy_bagi: text("koy_bagi", 1, 120), mesaj: text("mesaj", 0, 2000, true) };
-    const ip = req.headers.get("cf-connecting-ip") || req.headers.get("x-forwarded-for")?.split(",")[0]?.trim();
+    const ip = req.headers.get("x-forwarded-for")?.split(",").map(value => value.trim()).filter(Boolean).at(-1);
     if (!ip) return reply(503, "İstek doğrulanamadı.");
     const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(`${ipSalt}:${ip}`));
     const ipHash = Array.from(new Uint8Array(digest), value => value.toString(16).padStart(2, "0")).join("");

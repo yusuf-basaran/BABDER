@@ -4,23 +4,58 @@ import { haberModulunuYukle } from "./icerik.js";
 import { basvuruModulunuYukle } from "./basvurular.js";
 import { ayarlarModulunuYukle } from "./ayarlar.js";
 import { guvenlikModulunuYukle } from "./guvenlik.js";
+import { veriModulunuYukle } from "./veri.js";
 
-const token = localStorage.getItem("babder_token");
+const token = sessionStorage.getItem("babder_token");
 if (!token && !window.location.pathname.includes("giris.html")) {
   window.location.href = "/yonetim/giris.html";
 }
 
 document.addEventListener("DOMContentLoaded", () => {
+  paneliBaslat();
+});
+
+async function paneliBaslat() {
+  try {
+    const user = JSON.parse(sessionStorage.getItem("babder_user") || "{}");
+    if (!user.id) throw new Error("Oturum bulunamadı.");
+    const managers = await db.select("yoneticiler", `user_id=eq.${encodeURIComponent(user.id)}&select=rol,ad,aktif&limit=1`);
+    const manager = managers[0];
+    if (!manager?.aktif || !["admin", "editor", "goruntuleyici"].includes(manager.rol)) throw new Error("Panel yetkisi yok.");
+    window.BABDER_ROLE = manager.rol;
+    document.body.dataset.role = manager.rol;
+    document.getElementById("yonetici-adi").textContent = manager.ad;
+    erisimleriAyarla(manager.rol);
+  } catch {
+    db.signOut();
+    return;
+  }
   modulYonlendir();
   komutPaletiniBaslat();
   oturumZamanAsimiDenetle();
-
   document.getElementById("cikis-btn")?.addEventListener("click", () => db.signOut());
   window.addEventListener("hashchange", modulYonlendir);
-});
+}
+
+function erisimleriAyarla(rol) {
+  const adminOnly = new Set(["ayarlar", "guvenlik", "hukuki", "surumler", "yoneticiler"]);
+  const editorOnly = new Set(["basvurular", "mesajlar", "uyeler", "medya"]);
+  document.querySelectorAll(".kenar-menu a[data-modul]").forEach(link => {
+    const key = link.dataset.modul;
+    const hidden = rol !== "admin" && adminOnly.has(key)
+      || rol === "goruntuleyici" && editorOnly.has(key);
+    link.closest("li").hidden = hidden;
+  });
+  if (document.querySelector(`.kenar-menu a[data-modul="${location.hash.slice(1)}"]`)?.closest("li").hidden) location.hash = "pano";
+}
 
 function modulYonlendir() {
-  const hash = window.location.hash.replace("#", "") || "pano";
+  let hash = window.location.hash.replace("#", "") || "pano";
+  const link = document.querySelector(`.kenar-menu a[data-modul="${CSS.escape(hash)}"]`);
+  if (!link || link.closest("li").hidden) {
+    window.location.hash = "pano";
+    hash = "pano";
+  }
   const modulAlani = document.getElementById("modul-alani");
   const baslik = document.getElementById("aktif-sayfa-baslik");
 
@@ -43,23 +78,41 @@ function modulYonlendir() {
   } else if (hash === "guvenlik") {
     baslik.textContent = "Güvenlik & Denetim";
     guvenlikModulunuYukle(modulAlani);
+  } else if (["duyurular", "etkinlikler", "galeri", "albumler", "koyler", "mesajlar", "uyeler", "medya", "sayfalar", "sayfa_bolumleri", "anasayfa", "menu", "kurul", "belgeler", "hukuki", "surumler", "yoneticiler"].includes(hash)) {
+    baslik.textContent = document.querySelector(`[data-modul="${hash}"]`)?.textContent.trim() || "Yönetim";
+    veriModulunuYukle(modulAlani, hash);
   } else {
-    modulAlani.textContent = "[İÇERİK EKLENECEK: Bu modül hazırlanmaktadır.]";
+    window.location.hash = "pano";
   }
 }
 
 function komutPaletiniBaslat() {
   const palet = document.getElementById("komut-paleti");
   const input = document.getElementById("komut-input");
+  const results = document.getElementById("komut-sonuclar");
+  const links = [...document.querySelectorAll(".kenar-menu a[data-modul]")].filter(link => !link.closest("li").hidden);
+  input.addEventListener("input", () => {
+    const q = input.value.trim().toLocaleLowerCase("tr");
+    results.replaceChildren(...links.filter(link => !q || link.textContent.toLocaleLowerCase("tr").includes(q)).map(link => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "btn btn-ikincil";
+      button.style = "display:block;width:100%;text-align:left;margin:.25rem 0;";
+      button.textContent = link.textContent.trim();
+      button.addEventListener("click", () => { location.hash = link.dataset.modul; palet.style.display = "none"; input.value = ""; results.replaceChildren(); });
+      return button;
+    }));
+  });
 
   window.addEventListener("keydown", (e) => {
     if ((e.ctrlKey || e.metaKey) && e.key === "k") {
       e.preventDefault();
       palet.style.display = palet.style.display === "none" ? "flex" : "none";
-      if (palet.style.display === "flex") input.focus();
+      if (palet.style.display === "flex") { input.focus(); input.dispatchEvent(new Event("input")); }
     }
     if (e.key === "Escape") {
       palet.style.display = "none";
+      input.value = "";
     }
   });
 }

@@ -1,70 +1,51 @@
 import { db } from "../api.js";
 import { el, toastGoster } from "../utils.js";
 
-export async function basvuruModulunuYukle(kapsayici) {
-  kapsayici.innerHTML = "";
+const DURUMLAR = ["yeni", "inceleniyor", "onaylandi", "reddedildi"];
 
-  const aksiyonlar = el("div", { style: "display: flex; gap: 1rem; margin-bottom: 1rem;" }, [
-    el("button", { class: "btn btn-ikincil", text: "CSV Olarak İndir", id: "csv-indir-btn" })
+export async function basvuruModulunuYukle(kapsayici) {
+  kapsayici.replaceChildren();
+  const aksiyonlar = el("div", { style: "display:flex;gap:1rem;margin-bottom:1rem;" }, [
+    el("button", { class: "btn btn-ikincil", text: "CSV olarak indir" })
   ]);
   kapsayici.appendChild(aksiyonlar);
-
-  const tabloKapsayici = el("div", { class: "veri-tablosu-kapsayici" });
-  const tablo = el("table", { class: "veri-tablosu" }, [
-    el("thead", {}, [
-      el("tr", {}, [
-        el("th", { text: "Başvuran" }),
-        el("th", { text: "Telefon" }),
-        el("th", { text: "E-Posta" }),
-        el("th", { text: "Köy Bağı" }),
-        el("th", { text: "Tarih" }),
-        el("th", { text: "Durum" }),
-        el("th", { text: "İşlem" })
-      ])
-    ]),
-    el("tbody", { id: "basvuru-tablo-govde" })
+  const tbody = el("tbody");
+  const table = el("table", { class: "veri-tablosu" }, [
+    el("thead", {}, [el("tr", {}, ["Başvuran", "Telefon", "E-posta", "Köy bağı", "Tarih", "Durum", "İşlem"].map(text => el("th", { text })))]), tbody
   ]);
-  tabloKapsayici.appendChild(tablo);
-  kapsayici.appendChild(tabloKapsayici);
+  kapsayici.appendChild(el("div", { class: "veri-tablosu-kapsayici" }, [table]));
 
-  const veriler = await db.select("uyelik_basvurulari", "order=created_at.desc");
-  const govde = document.getElementById("basvuru-tablo-govde");
+  let rows;
+  try { rows = await db.select("uyelik_basvurulari", "deleted_at=is.null&order=created_at.desc"); }
+  catch { tbody.appendChild(el("tr", {}, [el("td", { colSpan: 7, text: "Başvurular yüklenemedi. Rol izinlerini veya bağlantıyı kontrol edin." })])); return; }
+  if (!rows.length) tbody.appendChild(el("tr", {}, [el("td", { colSpan: 7, text: "Başvuru bulunamadı." })]));
 
-  if (!veriler || veriler.length === 0) {
-    govde.appendChild(el("tr", {}, [el("td", { colSpan: 7, text: "Bekleyen başvuru yok." })]));
-    return;
+  for (const row of rows) {
+    const status = el("select", { class: "form-denetim", value: row.durum }, DURUMLAR.map(value => el("option", { value, text: value, selected: value === row.durum })));
+    status.addEventListener("change", async () => {
+      status.disabled = true;
+      try { await db.update("uyelik_basvurulari", row.id, { durum: status.value }); toastGoster("Başvuru durumu güncellendi.", "basari"); }
+      catch { status.value = row.durum; toastGoster("Durum güncellenemedi.", "hata"); }
+      finally { status.disabled = false; }
+    });
+    tbody.appendChild(el("tr", {}, [
+      el("td", { text: row.ad_soyad }), el("td", { text: row.telefon }), el("td", { text: row.eposta }), el("td", { text: row.koy_bagi }),
+      el("td", { text: new Date(row.created_at).toLocaleDateString("tr-TR") }), el("td", {}, [status]),
+      el("td", {}, [el("button", { class: "btn btn-ikincil", text: "Mesajı gör", onclick: () => alert(row.mesaj || "Başvuru mesajı bulunmuyor.") })])
+    ]));
   }
 
-  veriler.forEach(b => {
-    const satir = el("tr", {}, [
-      el("td", { text: b.ad_soyad }),
-      el("td", { text: b.telefon }),
-      el("td", { text: b.eposta }),
-      el("td", { text: b.koy_bagi }),
-      el("td", { text: new Date(b.created_at).toLocaleDateString("tr-TR") }),
-      el("td", { text: b.durum }),
-      el("td", {}, [
-        el("button", {
-          class: "btn btn-ana",
-          text: "Onayla",
-          onclick: async () => {
-            await db.update("uyelik_basvurulari", b.id, { durum: "onaylandi" });
-            toastGoster("Başvuru onaylandı", "basari");
-            basvuruModulunuYukle(kapsayici);
-          }
-        })
-      ])
-    ]);
-    govde.appendChild(satir);
-  });
-
-  document.getElementById("csv-indir-btn")?.addEventListener("click", () => {
-    let csv = "Ad Soyad,Telefon,Eposta,Koy Bagi,Tarih\n";
-    veriler.forEach(v => {
-      csv += `"${v.ad_soyad}","${v.telefon}","${v.eposta}","${v.koy_bagi}","${v.created_at}"\n`;
-    });
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-    const link = el("a", { href: URL.createObjectURL(blob), download: "uyelik_basvurulari.csv" });
+  aksiyonlar.querySelector("button").addEventListener("click", () => {
+    const csvCell = value => {
+      const text = String(value ?? "");
+      const safe = /^[=+@\-\t\r]/.test(text) ? `'${text}` : text;
+      return `"${safe.replace(/"/g, '""')}"`;
+    };
+    const lines = [["Ad Soyad", "Telefon", "E-posta", "Köy Bağı", "Tarih", "Durum"], ...rows.map(r => [r.ad_soyad, r.telefon, r.eposta, r.koy_bagi, r.created_at, r.durum])];
+    const csv = "\uFEFF" + lines.map(line => line.map(csvCell).join(",")).join("\r\n");
+    const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
+    const link = el("a", { href: url, download: "uyelik_basvurulari.csv" });
     link.click();
+    URL.revokeObjectURL(url);
   });
 }

@@ -65,7 +65,9 @@ async function islemKayitlariniGoster(hedef) {
   tabloKapsayici.appendChild(tablo);
   hedef.appendChild(tabloKapsayici);
 
-  const kayitlar = await db.select("islem_kayitlari", "order=created_at.desc&limit=50");
+  let kayitlar;
+  try { kayitlar = await db.select("islem_kayitlari", "order=created_at.desc&limit=50"); }
+  catch { hedef.appendChild(el("p", { class: "kart", text: "İşlem kayıtları yüklenemedi. Admin yetkisini ve bağlantıyı kontrol edin." })); return; }
   const govde = document.getElementById("log-tablo-govde");
 
   if (!kayitlar || kayitlar.length === 0) {
@@ -111,11 +113,20 @@ async function kvkkAraclariniGoster(hedef) {
       toastGoster("Lütfen geçerli bir e-posta giriniz.", "hata");
       return;
     }
-    sonucAlani.innerHTML = "<p>Veriler sorgulanıyor...</p>";
+    sonucAlani.replaceChildren(el("p", { text: "Veriler sorgulanıyor..." }));
 
-    const basvurular = await db.select("uyelik_basvurulari", `eposta=eq.${eposta}`);
-    const mesajlar = await db.select("iletisim_mesajlari", `eposta=eq.${eposta}`);
-    const uyeler = await db.select("uyeler", `eposta=eq.${eposta}`);
+    let basvurular, mesajlar, uyeler;
+    try {
+      const filtre = encodeURIComponent(eposta.replace(/[\\%_]/g, "\\$&"));
+      [basvurular, mesajlar, uyeler] = await Promise.all([
+        db.select("uyelik_basvurulari", `eposta=ilike.${filtre}`),
+        db.select("iletisim_mesajlari", `eposta=ilike.${filtre}`),
+        db.select("uyeler", `eposta=ilike.${filtre}`)
+      ]);
+    } catch {
+      sonucAlani.replaceChildren(el("p", { class: "kart", text: "Kayıtlar aranamadı. Veritabanı erişimini kontrol edin." }));
+      return;
+    }
 
     sonucAlani.innerHTML = "";
     const sonucKart = el("div", { class: "kart", style: "max-width: 700px;" }, [
@@ -147,10 +158,8 @@ async function kvkkAraclariniGoster(hedef) {
         if (confirm(`${eposta} adresine ait TÜM kişisel veriler geri döndürülemez şekilde silinecektir. Onaylıyor musunuz?`)) {
           btnSil.disabled = true;
           try {
-            if (basvurular) for (const b of basvurular) await db.delete("uyelik_basvurulari", b.id);
-            if (mesajlar) for (const m of mesajlar) await db.delete("iletisim_mesajlari", m.id);
-            if (uyeler) for (const u of uyeler) await db.delete("uyeler", u.id);
-            toastGoster("Kişisel veriler mevzuat uyarınca imha edildi.", "basari");
+            const silinenler = await db.rpc("kvkk_kisi_verilerini_sil", { p_eposta: eposta });
+            toastGoster(`Silme tamamlandı: ${silinenler.basvurular} başvuru, ${silinenler.mesajlar} mesaj, ${silinenler.uyeler} üye kaydı.`, "basari");
             sonucAlani.innerHTML = "";
             aramaInput.value = "";
           } catch {
@@ -173,34 +182,34 @@ async function copKutusunuGoster(hedef) {
   const kart = el("div", { class: "kart" }, [
     el("h3", { text: "Silinen Kayıtlar (Çöp Kutusu)" }),
     el("p", { 
-      text: "Buradaki kayıtlar sistemden tamamen kaldırılmamış, deleted_at ile işaretlenmiştir. Yalnızca admin kalıcı silebilir.",
+      text: "Silinen kayıtları geri yükleyebilir veya kalıcı silebilirsiniz. Kalıcı silme geri alınamaz.",
       style: "font-size: 0.85rem; color: var(--renk-metin-soluk); margin-bottom: 1rem;"
     })
   ]);
-
-  const silinenHaberler = await db.select("haberler", "deleted_at=not.is.null");
-
-  if (!silinenHaberler || silinenHaberler.length === 0) {
-    kart.appendChild(el("p", { text: "Çöp kutusu boş." }));
-  } else {
-    const liste = el("ul", { style: "list-style: none;" });
-    silinenHaberler.forEach(h => {
-      const li = el("li", { style: "padding: 0.5rem 0; border-bottom: 1px solid var(--renk-sinir); display: flex; justify-content: space-between; align-items: center;" }, [
-        el("span", { text: `${h.baslik} (Silinme: ${new Date(h.deleted_at).toLocaleDateString("tr-TR")})` }),
-        el("button", {
-          class: "btn btn-ikincil",
-          text: "Geri Yükle",
-          onclick: async () => {
-            await db.update("haberler", h.id, { deleted_at: null });
-            toastGoster("Haber geri yüklendi.", "basari");
-            copKutusunuGoster(hedef);
-          }
-        })
-      ]);
-      liste.appendChild(li);
-    });
-    kart.appendChild(liste);
-  }
-
   hedef.appendChild(kart);
+  const tables = [
+    ["sayfalar", "baslik"], ["haberler", "baslik"], ["duyurular", "baslik"], ["etkinlikler", "baslik"],
+    ["albumler", "baslik"], ["galeri", "alt_metin"], ["yonetim_kurulu", "ad_soyad"], ["koyler", "ad"],
+    ["belgeler", "baslik"], ["uyelik_basvurulari", "ad_soyad"], ["iletisim_mesajlari", "konu"], ["uyeler", "ad_soyad"]
+  ];
+  const list = el("div");
+  hedef.appendChild(list);
+  let total = 0;
+  for (const [table, label] of tables) {
+    let rows;
+    try { rows = await db.select(table, "deleted_at=not.is.null&order=created_at.desc"); }
+    catch { continue; }
+    for (const row of rows || []) {
+      total++;
+      const item = el("div", { class: "kart", style: "display:flex;justify-content:space-between;align-items:center;gap:1rem;margin:.5rem 0;" }, [
+        el("span", { text: `${table} · ${row[label] || row.id} · ${new Date(row.deleted_at).toLocaleDateString("tr-TR")}` }),
+        el("div", {}, [
+          el("button", { class: "btn btn-ikincil", text: "Geri yükle", onclick: async () => { try { await db.update(table, row.id, { deleted_at: null }); toastGoster("Kayıt geri yüklendi.", "basari"); await copKutusunuGoster(hedef); } catch { toastGoster("Geri yükleme başarısız.", "hata"); } } }),
+          el("button", { class: "btn btn-ikincil", text: "Kalıcı sil", onclick: async () => { if (!confirm("Bu kayıt ve varsa bağlı veriler kalıcı olarak silinecek. Devam edilsin mi?")) return; try { await db.delete(table, row.id); toastGoster("Kayıt kalıcı silindi.", "basari"); await copKutusunuGoster(hedef); } catch { toastGoster("Kalıcı silme başarısız.", "hata"); } } })
+        ])
+      ]);
+      list.appendChild(item);
+    }
+  }
+  if (!total) kart.appendChild(el("p", { text: "Çöp kutusu boş veya kayıtlar erişim nedeniyle görüntülenemedi." }));
 }

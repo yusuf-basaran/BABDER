@@ -5,8 +5,9 @@ const DURUMLAR = ["taslak", "incelemede", "yayinda", "arsiv"];
 
 export async function haberModulunuYukle(kapsayici) {
   kapsayici.replaceChildren();
+  const canEdit = ["admin", "editor"].includes(window.BABDER_ROLE);
   const ustBar = el("div", { style: "display:flex;justify-content:space-between;margin-bottom:1rem;" }, [
-    el("button", { class: "btn btn-ana", text: "+ Yeni Haber Ekle", onclick: () => haberFormuAc(kapsayici) })
+    ...(canEdit ? [el("button", { class: "btn btn-ana", text: "+ Yeni Haber Ekle", onclick: () => haberFormuAc(kapsayici) })] : [])
   ]);
   kapsayici.appendChild(ustBar);
   const tabloKapsayici = el("div", { class: "veri-tablosu-kapsayici" });
@@ -35,7 +36,7 @@ export async function haberModulunuYukle(kapsayici) {
       el("td", { text: h.kategori }),
       el("td", { text: new Date(h.yayin_tarihi).toLocaleDateString("tr-TR") }),
       el("td", { text: h.durum }),
-      el("td", {}, [
+      el("td", {}, canEdit ? [
         el("button", { class: "btn btn-ikincil", text: "Düzenle", onclick: () => haberFormuAc(kapsayici, h) }),
         el("button", { class: "btn btn-ikincil", text: "Çöpe Taşı", onclick: async () => {
           if (!confirm("Bu haberi çöp kutusuna taşımak istiyor musunuz?")) return;
@@ -47,7 +48,7 @@ export async function haberModulunuYukle(kapsayici) {
             toastGoster("Haber silinemedi. Yetkinizi ve bağlantınızı kontrol edin.", "hata");
           }
         } })
-      ])
+      ] : [el("span", { text: "Görüntüleme" })])
     ]);
     govde.appendChild(satir);
   }

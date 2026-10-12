@@ -28,8 +28,14 @@ export function guvenliMetinAyristir(hamMetin) {
       } else if (parca.startsWith("[") && parca.includes("](") && parca.endsWith(")")) {
         const metin = parca.slice(1, parca.indexOf("]("));
         const url = parca.slice(parca.indexOf("](") + 2, -1);
+        let parsed;
+        try { parsed = new URL(url, window.location.href); } catch { parsed = null; }
+        if (!parsed || !["http:", "https:"].includes(parsed.protocol)) {
+          p.appendChild(document.createTextNode(metin));
+          continue;
+        }
         p.appendChild(el("a", {
-          href: url,
+          href: parsed.href,
           text: metin,
           target: "_blank",
           rel: "noopener noreferrer"

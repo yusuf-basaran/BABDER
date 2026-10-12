@@ -12,7 +12,12 @@ document.addEventListener("DOMContentLoaded", async () => {
     return;
   }
 
-  const sonuclar = await db.select("haberler", `slug=eq.${encodeURIComponent(slug)}&durum=eq.yayinda&deleted_at=is.null`);
+  let sonuclar;
+  try { sonuclar = await db.select("haberler", `slug=eq.${encodeURIComponent(slug)}&durum=eq.yayinda&deleted_at=is.null`); }
+  catch {
+    kapsayici.replaceChildren(el("h1", { text: "Haber yüklenemedi" }), el("p", { text: "Bağlantı sorunu oluştu. Lütfen daha sonra yeniden deneyin." }));
+    return;
+  }
 
   kapsayici.innerHTML = "";
 

@@ -211,7 +211,7 @@ CREATE TABLE IF NOT EXISTS uyelik_basvurulari (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     ad_soyad VARCHAR(100) NOT NULL CHECK (length(ad_soyad) >= 3),
     telefon VARCHAR(20) NOT NULL CHECK (length(telefon) >= 10),
-    eposta VARCHAR(150) NOT NULL CHECK (eposta ~* '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$'),
+    eposta VARCHAR(150) NOT NULL CHECK (eposta ~* '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+[.][A-Za-z]{2,}$'),
     koy_bagi VARCHAR(100) NOT NULL,
     mesaj TEXT,
     kvkk_onay BOOLEAN NOT NULL DEFAULT FALSE CHECK (kvkk_onay = TRUE),
@@ -225,7 +225,7 @@ CREATE TABLE IF NOT EXISTS uyelik_basvurulari (
 CREATE TABLE IF NOT EXISTS iletisim_mesajlari (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     ad_soyad VARCHAR(100) NOT NULL CHECK (length(ad_soyad) >= 3),
-    eposta VARCHAR(150) NOT NULL CHECK (eposta ~* '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$'),
+    eposta VARCHAR(150) NOT NULL CHECK (eposta ~* '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+[.][A-Za-z]{2,}$'),
     konu VARCHAR(150) NOT NULL CHECK (length(konu) >= 2),
     mesaj TEXT NOT NULL CHECK (length(mesaj) >= 10),
     kvkk_onay BOOLEAN NOT NULL DEFAULT FALSE CHECK (kvkk_onay = TRUE),
@@ -295,6 +295,20 @@ CREATE TABLE IF NOT EXISTS islem_kayitlari (
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+-- Safe, repeatable validation upgrades. NOT VALID avoids rejecting historic rows on deployment.
+ALTER TABLE uyelik_basvurulari DROP CONSTRAINT IF EXISTS uyelik_basvurulari_eposta_check;
+ALTER TABLE uyelik_basvurulari ADD CONSTRAINT uyelik_basvurulari_eposta_check
+    CHECK (eposta ~* '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+[.][A-Za-z]{2,}$') NOT VALID;
+ALTER TABLE iletisim_mesajlari DROP CONSTRAINT IF EXISTS iletisim_mesajlari_eposta_check;
+ALTER TABLE iletisim_mesajlari ADD CONSTRAINT iletisim_mesajlari_eposta_check
+    CHECK (eposta ~* '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+[.][A-Za-z]{2,}$') NOT VALID;
+ALTER TABLE uyelik_basvurulari DROP CONSTRAINT IF EXISTS uyelik_basvurulari_form_bounds;
+ALTER TABLE uyelik_basvurulari ADD CONSTRAINT uyelik_basvurulari_form_bounds
+    CHECK (length(trim(ad_soyad)) >= 3 AND length(trim(telefon)) >= 10 AND length(trim(koy_bagi)) >= 1 AND (mesaj IS NULL OR length(mesaj) <= 2000)) NOT VALID;
+ALTER TABLE iletisim_mesajlari DROP CONSTRAINT IF EXISTS iletisim_mesajlari_form_bounds;
+ALTER TABLE iletisim_mesajlari ADD CONSTRAINT iletisim_mesajlari_form_bounds
+    CHECK (length(trim(ad_soyad)) >= 3 AND length(trim(konu)) >= 2 AND length(trim(mesaj)) BETWEEN 10 AND 5000) NOT VALID;
+
 ALTER TABLE yoneticiler ENABLE ROW LEVEL SECURITY;
 ALTER TABLE ayarlar ENABLE ROW LEVEL SECURITY;
 ALTER TABLE menu_ogeleri ENABLE ROW LEVEL SECURITY;
@@ -328,6 +342,121 @@ BEGIN
     RETURN kullanici_rol;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, pg_temp;
+
+INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+VALUES
+    ('gorseller', 'gorseller', TRUE, 3145728, ARRAY['image/jpeg', 'image/png', 'image/webp']),
+    ('belgeler', 'belgeler', TRUE, 10485760, ARRAY['application/pdf'])
+ON CONFLICT (id) DO UPDATE SET
+    public = EXCLUDED.public,
+    file_size_limit = EXCLUDED.file_size_limit,
+    allowed_mime_types = EXCLUDED.allowed_mime_types;
+
+DROP POLICY IF EXISTS "babder_medya_yukleme" ON storage.objects;
+CREATE POLICY "babder_medya_yukleme" ON storage.objects FOR INSERT TO authenticated
+WITH CHECK (
+    bucket_id IN ('gorseller', 'belgeler')
+    AND (storage.foldername(name))[1] = auth.uid()::text
+    AND mevcut_kullanici_rolu() IN ('admin', 'editor')
+);
+DROP POLICY IF EXISTS "babder_medya_guncelleme" ON storage.objects;
+CREATE POLICY "babder_medya_guncelleme" ON storage.objects FOR UPDATE TO authenticated
+USING (
+    bucket_id IN ('gorseller', 'belgeler')
+    AND (storage.foldername(name))[1] = auth.uid()::text
+    AND mevcut_kullanici_rolu() IN ('admin', 'editor')
+)
+WITH CHECK (
+    bucket_id IN ('gorseller', 'belgeler')
+    AND (storage.foldername(name))[1] = auth.uid()::text
+    AND mevcut_kullanici_rolu() IN ('admin', 'editor')
+);
+DROP POLICY IF EXISTS "babder_medya_silme" ON storage.objects;
+CREATE POLICY "babder_medya_silme" ON storage.objects FOR DELETE TO authenticated
+USING (bucket_id IN ('gorseller', 'belgeler') AND mevcut_kullanici_rolu() = 'admin');
+
+CREATE OR REPLACE FUNCTION kvkk_kisi_verilerini_sil(p_eposta TEXT)
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, pg_temp
+AS $$
+DECLARE
+    basvuru_adet INTEGER;
+    mesaj_adet INTEGER;
+    uye_adet INTEGER;
+BEGIN
+    IF mevcut_kullanici_rolu() IS DISTINCT FROM 'admin'::rol_turu THEN
+        RAISE EXCEPTION 'Bu işlem için admin yetkisi gerekir.' USING ERRCODE = '42501';
+    END IF;
+    IF p_eposta IS NULL OR length(trim(p_eposta)) = 0 THEN
+        RAISE EXCEPTION 'E-posta gereklidir.' USING ERRCODE = '22023';
+    END IF;
+
+    DELETE FROM uyelik_basvurulari WHERE lower(eposta) = lower(trim(p_eposta));
+    GET DIAGNOSTICS basvuru_adet = ROW_COUNT;
+    DELETE FROM iletisim_mesajlari WHERE lower(eposta) = lower(trim(p_eposta));
+    GET DIAGNOSTICS mesaj_adet = ROW_COUNT;
+    DELETE FROM uyeler WHERE lower(eposta) = lower(trim(p_eposta));
+    GET DIAGNOSTICS uye_adet = ROW_COUNT;
+
+    RETURN jsonb_build_object('basvurular', basvuru_adet, 'mesajlar', mesaj_adet, 'uyeler', uye_adet);
+END;
+$$;
+REVOKE ALL ON FUNCTION kvkk_kisi_verilerini_sil(TEXT) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION kvkk_kisi_verilerini_sil(TEXT) TO authenticated;
+
+CREATE OR REPLACE FUNCTION kayit_degisimini_logla()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, pg_temp
+AS $$
+DECLARE
+    kayit JSONB;
+    kayit_uuid UUID;
+    hassas BOOLEAN;
+BEGIN
+    kayit := CASE WHEN TG_OP = 'DELETE' THEN to_jsonb(OLD) ELSE to_jsonb(NEW) END;
+    BEGIN
+        kayit_uuid := (kayit ->> 'id')::UUID;
+    EXCEPTION WHEN invalid_text_representation THEN
+        kayit_uuid := NULL;
+    END;
+    IF TG_OP IN ('UPDATE', 'DELETE') AND TG_TABLE_NAME IN (
+        'menu_ogeleri', 'sayfalar', 'sayfa_bolumleri', 'anasayfa_bolumleri', 'haberler',
+        'duyurular', 'etkinlikler', 'albumler', 'galeri', 'yonetim_kurulu', 'koyler',
+        'belgeler', 'hukuki_metinler'
+    ) THEN
+        INSERT INTO surumler (tablo_adi, kayit_id, veri, degistiren)
+        VALUES (TG_TABLE_NAME, kayit_uuid, to_jsonb(OLD), auth.uid());
+    END IF;
+    hassas := TG_TABLE_NAME IN ('uyelik_basvurulari', 'iletisim_mesajlari', 'uyeler', 'aidat_kayitlari', 'ayarlar', 'yoneticiler');
+    INSERT INTO islem_kayitlari (user_id, eylem, tablo_adi, kayit_id, ayrinti, hassas_islem)
+    VALUES (auth.uid(), lower(TG_OP), TG_TABLE_NAME, kayit_uuid, jsonb_build_object('kaynak', 'database_trigger'), hassas);
+    IF TG_OP = 'DELETE' THEN
+        RETURN OLD;
+    END IF;
+    RETURN NEW;
+END;
+$$;
+REVOKE ALL ON FUNCTION kayit_degisimini_logla() FROM PUBLIC, anon, authenticated;
+
+DO $$
+DECLARE
+    tablo TEXT;
+BEGIN
+    FOREACH tablo IN ARRAY ARRAY[
+        'yoneticiler', 'ayarlar', 'menu_ogeleri', 'sayfalar', 'sayfa_bolumleri',
+        'anasayfa_bolumleri', 'haberler', 'duyurular', 'etkinlikler', 'albumler',
+        'galeri', 'yonetim_kurulu', 'koyler', 'belgeler', 'hukuki_metinler',
+        'uyelik_basvurulari', 'iletisim_mesajlari', 'uyeler', 'aidat_kayitlari', 'medya'
+    ] LOOP
+        EXECUTE format('DROP TRIGGER IF EXISTS babder_audit_change ON public.%I', tablo);
+        EXECUTE format('CREATE TRIGGER babder_audit_change AFTER INSERT OR UPDATE OR DELETE ON public.%I FOR EACH ROW EXECUTE FUNCTION kayit_degisimini_logla()', tablo);
+    END LOOP;
+END;
+$$;
 
 DROP POLICY IF EXISTS "yoneticiler_okuma" ON yoneticiler;
 CREATE POLICY "yoneticiler_okuma" ON yoneticiler FOR SELECT TO authenticated USING (user_id = auth.uid() OR mevcut_kullanici_rolu() = 'admin');
@@ -412,7 +541,13 @@ DROP POLICY IF EXISTS "hukuki_admin_yazma" ON hukuki_metinler;
 CREATE POLICY "hukuki_admin_yazma" ON hukuki_metinler FOR ALL TO authenticated USING (mevcut_kullanici_rolu() = 'admin');
 
 DROP POLICY IF EXISTS "basvuru_anon_ekleme" ON uyelik_basvurulari;
-CREATE POLICY "basvuru_anon_ekleme" ON uyelik_basvurulari FOR INSERT TO anon, authenticated WITH CHECK (kvkk_onay = TRUE);
+CREATE POLICY "basvuru_anon_ekleme" ON uyelik_basvurulari FOR INSERT TO anon, authenticated WITH CHECK (
+    kvkk_onay = TRUE
+    AND durum = 'yeni'
+    AND ic_not IS NULL
+    AND deleted_at IS NULL
+    AND onay_tarihi BETWEEN NOW() - INTERVAL '1 minute' AND NOW() + INTERVAL '1 minute'
+);
 DROP POLICY IF EXISTS "basvuru_yetkili_okuma" ON uyelik_basvurulari;
 CREATE POLICY "basvuru_yetkili_okuma" ON uyelik_basvurulari FOR SELECT TO authenticated USING (mevcut_kullanici_rolu() IN ('admin', 'editor'));
 DROP POLICY IF EXISTS "basvuru_yetkili_guncelleme" ON uyelik_basvurulari;
@@ -421,7 +556,14 @@ DROP POLICY IF EXISTS "basvuru_admin_silme" ON uyelik_basvurulari;
 CREATE POLICY "basvuru_admin_silme" ON uyelik_basvurulari FOR DELETE TO authenticated USING (mevcut_kullanici_rolu() = 'admin');
 
 DROP POLICY IF EXISTS "mesaj_anon_ekleme" ON iletisim_mesajlari;
-CREATE POLICY "mesaj_anon_ekleme" ON iletisim_mesajlari FOR INSERT TO anon, authenticated WITH CHECK (kvkk_onay = TRUE);
+CREATE POLICY "mesaj_anon_ekleme" ON iletisim_mesajlari FOR INSERT TO anon, authenticated WITH CHECK (
+    kvkk_onay = TRUE
+    AND okundu = FALSE
+    AND etiket = 'Genel'
+    AND ic_not IS NULL
+    AND deleted_at IS NULL
+    AND onay_tarihi BETWEEN NOW() - INTERVAL '1 minute' AND NOW() + INTERVAL '1 minute'
+);
 DROP POLICY IF EXISTS "mesaj_yetkili_okuma" ON iletisim_mesajlari;
 CREATE POLICY "mesaj_yetkili_okuma" ON iletisim_mesajlari FOR SELECT TO authenticated USING (mevcut_kullanici_rolu() IN ('admin', 'editor'));
 DROP POLICY IF EXISTS "mesaj_yetkili_guncelleme" ON iletisim_mesajlari;
@@ -445,11 +587,10 @@ CREATE POLICY "medya_yazma" ON medya FOR INSERT TO authenticated WITH CHECK (mev
 DROP POLICY IF EXISTS "medya_silme" ON medya;
 CREATE POLICY "medya_silme" ON medya FOR DELETE TO authenticated USING (mevcut_kullanici_rolu() = 'admin');
 DROP POLICY IF EXISTS "surumler_goruntuleme" ON surumler;
-CREATE POLICY "surumler_goruntuleme" ON surumler FOR SELECT TO authenticated USING (mevcut_kullanici_rolu() IS NOT NULL);
+CREATE POLICY "surumler_goruntuleme" ON surumler FOR SELECT TO authenticated USING (mevcut_kullanici_rolu() = 'admin');
 DROP POLICY IF EXISTS "islem_kayitlari_goruntuleme" ON islem_kayitlari;
 CREATE POLICY "islem_kayitlari_goruntuleme" ON islem_kayitlari FOR SELECT TO authenticated USING (mevcut_kullanici_rolu() = 'admin');
 DROP POLICY IF EXISTS "islem_kayitlari_ekleme" ON islem_kayitlari;
-CREATE POLICY "islem_kayitlari_ekleme" ON islem_kayitlari FOR INSERT TO authenticated WITH CHECK (user_id = auth.uid());
 
 INSERT INTO ayarlar (anahtar, deger, aciklama, halka_acik, hassas) VALUES
 ('dernek_unvan', 'Şanlıurfa Siverek Kapıkaya Bab Köyü ve Köyleri Sosyal Yardımlaşma ve Dayanışma Derneği', 'Tüzükteki tam resmi ad', TRUE, FALSE),

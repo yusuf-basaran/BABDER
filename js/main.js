@@ -125,15 +125,20 @@ async function menuyuYukle() {
       const isInPages = window.location.pathname.includes("/sayfalar/");
       menuListe.innerHTML = "";
       veriler.forEach((m) => {
+        let parsedHref;
+        try { parsedHref = new URL(m.baglanti, window.location.origin); } catch { return; }
+        if (!["http:", "https:"].includes(parsedHref.protocol)) return;
         const li = document.createElement("li");
         const a = document.createElement("a");
 
-        let linkHref = m.baglanti;
+        let linkHref = m.baglanti.trim();
         if (isInPages) {
           if (linkHref === "/" || linkHref === "./" || linkHref === "index.html") {
             linkHref = "../index.html";
           } else if (linkHref.startsWith("/sayfalar/")) {
             linkHref = linkHref.replace("/sayfalar/", "./");
+          } else if (!linkHref.startsWith("/") && !/^https?:\/\//i.test(linkHref)) {
+            linkHref = `../${linkHref}`;
           }
         }
 

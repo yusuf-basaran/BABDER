@@ -3,32 +3,42 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>İletişim & Merkez Adresi | BABDER</title>
-  <meta name="description" content="BABDER iletişim bilgileri, resmi dernek merkezi adresi, telefon numarası ve mesaj formu. Bize doğrudan ulaşın.">
-  <meta name="robots" content="index, follow">
-  <link rel="canonical" href="./iletisim.html">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
 
+  <title>İletişim | BABDER</title>
+  <meta name="description" content="BABDER iletişim formu, resmi merkez adresi ve telefon bilgileri.">
+  <meta name="robots" content="index, follow">
+  <meta name="theme-color" content="#1B7F3B">
+
+  <!-- Sekme Başlığı Simgesi (Title Logo / Favicon) -->
   <link rel="icon" type="image/png" href="../img/logo.png">
+  <link rel="shortcut icon" type="image/png" href="../img/logo.png">
   <link rel="apple-touch-icon" href="../img/logo.png">
 
+  <!-- Open Graph -->
   <meta property="og:type" content="website">
   <meta property="og:title" content="İletişim | BABDER">
-  <meta property="og:description" content="BABDER iletişim formu, adres ve telefon bilgileri.">
+  <meta property="og:description" content="BABDER iletişim formu, resmi merkez adresi ve telefon bilgileri.">
   <meta property="og:image" content="../img/logo.png">
 
   <link rel="stylesheet" href="../css/style.css">
 </head>
 <body>
+  <a href="#ana-icerik" class="erisebilirlik-atla">Ana İçeriğe Geç</a>
+
   <header class="site-header">
     <div class="header-icerik">
+      <!-- SOL: LOGO VE DERNEK ADI -->
       <a href="../index.html" class="marka-alani">
-        <img src="../img/logo.png" alt="BABDER Resmi Logosu" class="marka-logo" width="52" height="52">
+        <img src="../img/logo.png" alt="BABDER Resmi Logosu" class="marka-logo" width="48" height="48">
         <div>
           <span class="marka-baslik">BABDER</span>
           <span class="marka-alt-baslik">Kapıkaya Bab Köyü ve Köyleri Derneği</span>
         </div>
       </a>
-      <nav class="ana-menu" aria-label="Ana Menü">
+
+      <!-- SAĞ: MENÜ -->
+      <nav id="ana-navigasyon" class="ana-menu" aria-label="Ana Menü">
         <ul id="menu-liste">
           <li><a href="../index.html">Ana Sayfa</a></li>
           <li><a href="./hakkimizda.html">Hakkımızda</a></li>
@@ -40,10 +50,18 @@
           <li><a href="./iletisim.html">İletişim</a></li>
         </ul>
       </nav>
+
+      <div class="header-aksiyonlar">
+        <button id="mobil-menu-tetikleyici" class="mobil-menu-btn" aria-label="Menüyü Aç/Kapat" aria-expanded="false">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M4 6h16M4 12h16M4 18h16"></path>
+          </svg>
+        </button>
+      </div>
     </div>
   </header>
 
-  <main class="kapsayici" style="padding: 3rem 1rem;">
+  <main id="ana-icerik" class="kapsayici bolum-bosluk-buyuk">
     <h1>İletişim</h1>
     <div class="izgara-3">
       <div class="kart">
@@ -51,52 +69,48 @@
         <p><strong>Adres:</strong> <span data-ayar="adres">[DERNEK ADRESİ]</span></p>
         <p><strong>Telefon:</strong> <span data-ayar="telefon">[TELEFON NUMARASI]</span></p>
         <p><strong>E-Posta:</strong> <span data-ayar="eposta">[E-POSTA ADRESİ]</span></p>
-        <p style="margin-top: 1rem;">
-          <a href="https://maps.google.com/?q=Siverek+Sanliurfa" target="_blank" rel="noopener noreferrer" class="btn btn-ikincil">Haritada Aç</a>
-        </p>
+        <p><a href="https://maps.google.com/?q=Siverek+Sanliurfa" target="_blank" rel="noopener noreferrer" class="btn btn-ikincil">Haritada Aç</a></p>
       </div>
 
-      <form id="iletisim-formu" class="kart" style="grid-column: span 2;">
+      <form id="iletisim-formu" class="kart">
         <h2 class="kart-baslik">Bize Ulaşın</h2>
-        <div class="bal-kupugu" aria-hidden="true">
-          <input type="text" id="guvenlik_kodu" tabindex="-1">
-        </div>
-
-        <div class="form-grup">
-          <label for="iletisim_ad">Adınız Soyadınız *</label>
-          <input type="text" id="iletisim_ad" class="form-denetim" required>
-        </div>
-
-        <div class="form-grup">
-          <label for="iletisim_eposta">E-Posta Adresiniz *</label>
-          <input type="email" id="iletisim_eposta" class="form-denetim" required>
-        </div>
-
-        <div class="form-grup">
-          <label for="iletisim_konu">Konu *</label>
-          <input type="text" id="iletisim_konu" class="form-denetim" required>
-        </div>
-
-        <div class="form-grup">
-          <label for="iletisim_mesaj">Mesajınız *</label>
-          <textarea id="iletisim_mesaj" class="form-denetim" rows="5" required minlength="10"></textarea>
-        </div>
-
-        <div class="form-grup" style="flex-direction: row; gap: 0.5rem;">
-          <input type="checkbox" id="iletisim_kvkk" required>
-          <label for="iletisim_kvkk" style="font-size: 0.85rem;">
-            Mesajımın işlenmesi için <a href="./kvkk.html" target="_blank" rel="noopener noreferrer">Aydınlatma Metni</a>'ni onaylıyorum.
-          </label>
-        </div>
-
+        <div class="bal-kupugu" aria-hidden="true"><input type="text" id="guvenlik_kodu" tabindex="-1"></div>
+        <div class="form-grup"><label for="iletisim_ad">Adınız Soyadınız *</label><input type="text" id="iletisim_ad" class="form-denetim" required></div>
+        <div class="form-grup"><label for="iletisim_eposta">E-Posta Adresiniz *</label><input type="email" id="iletisim_eposta" class="form-denetim" required></div>
+        <div class="form-grup"><label for="iletisim_konu">Konu *</label><input type="text" id="iletisim_konu" class="form-denetim" required></div>
+        <div class="form-grup"><label for="iletisim_mesaj">Mesajınız *</label><textarea id="iletisim_mesaj" class="form-denetim" rows="5" required minlength="10"></textarea></div>
+        <div class="form-grup"><label><input type="checkbox" id="iletisim_kvkk" required> <a href="./kvkk.html" target="_blank" rel="noopener noreferrer">Aydınlatma Metni</a>'ni onaylıyorum.</label></div>
         <button type="submit" class="btn btn-ana">Gönder</button>
-        <div id="mesaj-durum" style="margin-top: 1rem;"></div>
+        <div id="mesaj-durum"></div>
       </form>
     </div>
   </main>
 
+  <!-- 3 SÜTUNLU KURUMSAL YEŞİL FOOTER -->
   <footer class="site-footer">
-    <div class="kapsayici footer-alt">
+    <div class="kapsayici izgara-3">
+      <div>
+        <h3>BABDER</h3>
+        <p data-ayar="dernek_unvan">Şanlıurfa Siverek Kapıkaya Bab Köyü ve Köyleri Sosyal Yardımlaşma ve Dayanışma Derneği</p>
+        <p>Kütük No: <span data-ayar="kutuk_no">[KÜTÜK NO]</span></p>
+      </div>
+      <div>
+        <h3>İletişim</h3>
+        <p>Adres: <span data-ayar="adres">[DERNEK ADRESİ]</span></p>
+        <p>Telefon: <span data-ayar="telefon">[TELEFON NUMARASI]</span></p>
+        <p>E-Posta: <span data-ayar="eposta">[E-POSTA ADRESİ]</span></p>
+      </div>
+      <div>
+        <h3>Hukuki</h3>
+        <ul class="footer-link-liste">
+          <li><a href="./kvkk.html">KVKK Aydınlatma Metni</a></li>
+          <li><a href="./gizlilik-politikasi.html">Gizlilik Politikası</a></li>
+          <li><a href="./cerez-politikasi.html">Çerez Politikası</a></li>
+          <li><a href="./tuzuk-ve-belgeler.html">Dernek Tüzüğü</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-alt">
       <p>&copy; 2026 BABDER. Tüm hakları saklıdır.</p>
     </div>
   </footer>
@@ -104,11 +118,9 @@
   <script type="module" src="../js/main.js"></script>
   <script type="module">
     import { db } from "../js/api.js";
-
     document.getElementById("iletisim-formu")?.addEventListener("submit", async (e) => {
       e.preventDefault();
       if (document.getElementById("guvenlik_kodu").value) return;
-
       const veri = {
         ad_soyad: document.getElementById("iletisim_ad").value.trim(),
         eposta: document.getElementById("iletisim_eposta").value.trim(),
@@ -116,12 +128,11 @@
         mesaj: document.getElementById("iletisim_mesaj").value.trim(),
         kvkk_onay: document.getElementById("iletisim_kvkk").checked
       };
-
       try {
         await db.insert("iletisim_mesajlari", veri);
-        document.getElementById("mesaj-durum").textContent = "Mesajınız alındı, en kısa sürede dönüş yapılacaktır.";
+        document.getElementById("mesaj-durum").textContent = "Mesajınız iletildi.";
         document.getElementById("iletisim-formu").reset();
-      } catch (err) {
+      } catch {
         document.getElementById("mesaj-durum").textContent = "Mesaj iletilemedi.";
       }
     });

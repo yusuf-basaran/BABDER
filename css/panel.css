@@ -245,3 +245,4 @@ body.panel-govde {
   .panel-ust-cubuk > div:last-child { gap: .5rem !important; }
   .panel-ust-cubuk > div:last-child > span:first-child { display: none; }
 }
+.panel-dosya-secimi { display: grid; gap: .5rem; min-width: 0; }

@@ -1,6 +1,6 @@
 import { db } from "../api.js";
 import { el, toastGoster } from "../utils.js";
-import { gorselAlaniniOlustur, gorseliYukle, gorseliWebpSikistir } from "./medya.js";
+import { gorselAlaniniOlustur, gorseliYukle, gorseliWebpSikistir, belgeAlaniniOlustur, belgeyiYukle, dosyaBaglantisiniDogrula } from "./medya.js";
 import { alanYardimiEkle, panelRehberiniGoster } from "./rehber.js";
 
 const METIN = (name, label, options = {}) => ({ name, label, type: "text", ...options });
@@ -25,7 +25,7 @@ const MODULLER = {
   anasayfa: { title: "Ana sayfa bölümleri", table: "anasayfa_bolumleri", columns: ["kod", "baslik", "sira", "aktif"], fields: [METIN("kod", "Kod"), METIN("baslik", "Başlık"), METIN("alt_baslik", "Alt başlık", { nullable: true }), AREA("icerik", "İçerik"), METIN("buton_metin", "Buton metni", { nullable: true }), METIN("buton_baglanti", "Buton bağlantısı", { nullable: true }), GORSEL("gorsel_url", "Görsel", { nullable: true }), METIN("sira", "Sıra", { type: "number" }), BOOL("aktif", "Yayında")], softDelete: false },
   menu: { title: "Menü öğeleri", table: "menu_ogeleri", columns: ["baslik", "baglanti", "konum", "sira", "aktif"], fields: [METIN("baslik", "Başlık"), METIN("baglanti", "Bağlantı"), METIN("konum", "Konum"), METIN("sira", "Sıra", { type: "number" }), BOOL("aktif", "Etkin")], softDelete: false },
   kurul: { title: "Yönetim Kurulu", table: "yonetim_kurulu", columns: ["ad_soyad", "gorev", "kurul_turu", "donem", "sira"], fields: [METIN("ad_soyad", "Ad soyad"), METIN("gorev", "Görev"), METIN("kurul_turu", "Kurul türü"), METIN("donem", "Dönem"), GORSEL("fotograf_url", "Fotoğraf", { nullable: true }), METIN("sira", "Sıra", { type: "number" })], softDelete: true },
-  belgeler: { title: "Belgeler", table: "belgeler", columns: ["baslik", "kategori", "surum", "durum"], fields: [METIN("baslik", "Başlık"), METIN("kategori", "Kategori"), METIN("dosya_url", "Dosya URL"), METIN("surum", "Sürüm"), SELECT("durum", "Durum", DURUM)], softDelete: true },
+  belgeler: { title: "Belgeler", table: "belgeler", columns: ["baslik", "kategori", "surum", "durum"], fields: [METIN("baslik", "Başlık"), METIN("kategori", "Kategori"), METIN("dosya_url", "PDF belge", { type: "pdf" }), METIN("surum", "Sürüm"), SELECT("durum", "Durum", DURUM)], softDelete: true },
   hukuki: { title: "Hukuki Metinler", table: "hukuki_metinler", columns: ["kod", "baslik", "surum", "hukuk_onay", "aktif"], fields: [METIN("kod", "Kod"), METIN("baslik", "Başlık"), AREA("icerik", "İçerik"), METIN("surum", "Sürüm"), METIN("yururluk_tarihi", "Yürürlük tarihi", { type: "date" }), BOOL("hukuk_onay", "Hukuk onayından geçti"), BOOL("aktif", "Yayında")], softDelete: false },
   albumler: { title: "Albüm Yönetimi", table: "albumler", columns: ["baslik", "aciklama", "kapak_gorseli", "sira"], fields: [METIN("baslik", "Albüm başlığı"), AREA("aciklama", "Açıklama"), GORSEL("kapak_gorseli", "Kapak görseli", { nullable: true }), METIN("sira", "Sıra", { type: "number" })], softDelete: true },
   surumler: { title: "İçerik Sürüm Geçmişi", table: "surumler", columns: ["tablo_adi", "kayit_id", "degistiren", "created_at", "veri"], fields: [], softDelete: false, readOnly: true },
@@ -95,6 +95,7 @@ async function kayitFormu(root, cfg, row = null) {
   }
   const controls = {};
   const imageFields = {};
+  const pdfFields = {};
   let albums = [];
   let pages = [];
   let documents = [];
@@ -107,7 +108,7 @@ async function kayitFormu(root, cfg, row = null) {
     catch { toastGoster("Sayfa listesi alınamadı.", "hata"); return; }
   }
   if (cfg.fields.some(field => field.type === "document")) {
-    try { documents = await db.select("belgeler", "order=baslik.asc"); }
+    try { documents = await db.select("belgeler", "deleted_at=is.null&order=baslik.asc"); }
     catch { toastGoster("Belge listesi alınamadı.", "hata"); return; }
   }
   for (const field of cfg.fields) {
@@ -122,7 +123,16 @@ async function kayitFormu(root, cfg, row = null) {
     }
     else if (field.type === "album") controls[field.name] = el("select", attrs, [el("option", { value: "", text: "Albüm seçmeden ekle", selected: !row?.album_id }), ...albums.map(album => el("option", { value: album.id, text: album.baslik, selected: row?.album_id === album.id }))]);
     else if (field.type === "page") controls[field.name] = el("select", attrs, [el("option", { value: "", text: "Sayfa seçin" }), ...pages.map(page => el("option", { value: page.id, text: `${page.baslik} (${page.slug})`, selected: row?.sayfa_id === page.id }))]);
-    else if (field.type === "document") controls[field.name] = el("select", attrs, [el("option", { value: "", text: "Tutanak belgesi seçin", selected: !row?.[field.name] }), ...documents.map(doc => el("option", { value: doc.id, text: `${doc.baslik} (${doc.kategori})`, selected: row?.[field.name] === doc.id }))]);
+    else if (field.type === "document") {
+      controls[field.name] = el("select", attrs, [el("option", { value: "", text: "Mevcut tutanak seçin (isteğe bağlı)", selected: !row?.[field.name] }), ...documents.map(doc => el("option", { value: doc.id, text: `${doc.baslik} (${doc.kategori})`, selected: row?.[field.name] === doc.id }))]);
+      pdfFields[field.name] = belgeAlaniniOlustur();
+      controls[field.name].addEventListener("change", () => { pdfFields[field.name].urlInput.value = ""; pdfFields[field.name].fileInput.value = ""; pdfFields[field.name].status.textContent = ""; });
+      for (const control of [pdfFields[field.name].urlInput, pdfFields[field.name].fileInput]) control.addEventListener("change", () => { if (pdfFields[field.name].urlInput.value || pdfFields[field.name].fileInput.files?.[0]) controls[field.name].value = ""; });
+    }
+    else if (field.type === "pdf") {
+      pdfFields[field.name] = belgeAlaniniOlustur(row?.[field.name] || "");
+      controls[field.name] = pdfFields[field.name].urlInput;
+    }
     else if (field.type === "image") {
       imageFields[field.name] = gorselAlaniniOlustur(row?.[field.name] || "", false);
       controls[field.name] = imageFields[field.name].urlInput;
@@ -138,10 +148,16 @@ async function kayitFormu(root, cfg, row = null) {
       }
       controls[field.name] = el("input", inputAttrs);
     }
-    const grup = el("div", { class: "panel-form-alani" }, [el("label", { class: "form-grup", text: field.label }, [field.type === "image" ? imageFields[field.name].root : controls[field.name]])]);
+    const grup = el("div", { class: "panel-form-alani" }, [el("label", { class: "form-grup", text: field.label }, [field.type === "image" ? imageFields[field.name].root : field.type === "pdf" ? el("span", { text: "Bağlantı yazın veya aşağıdan dosya seçin." }) : controls[field.name]])]);
+    if (pdfFields[field.name]) grup.appendChild(pdfFields[field.name].root);
     const key = Object.keys(MODULLER).find(k => MODULLER[k] === cfg);
     alanYardimiEkle(controls[field.name], grup, key, field.name, field.label, field.type);
     if (field.type !== "checkbox") grup.appendChild(el("p", { class: "panel-alan-gereklilik", text: field.nullable ? "İsteğe bağlı: boş bırakabilirsiniz." : "Bu alan zorunludur." }));
+    if (pdfFields[field.name]) {
+      const describedBy = controls[field.name].getAttribute("aria-describedby");
+      pdfFields[field.name].urlInput.setAttribute("aria-describedby", describedBy);
+      pdfFields[field.name].fileInput.setAttribute("aria-describedby", describedBy);
+    }
     if (field.type === "image") imageFields[field.name].fileInput.setAttribute("aria-describedby", controls[field.name].getAttribute("aria-describedby"));
     form.appendChild(grup);
   }
@@ -153,6 +169,10 @@ async function kayitFormu(root, cfg, row = null) {
     event.preventDefault();
     const data = {};
     const uploadedImages = [];
+    const createdDocuments = [];
+    const submit = form.querySelector('[type="submit"]');
+    submit.disabled = true;
+    submit.textContent = "Kaydediliyor…";
     try {
       for (const field of cfg.fields) {
         const control = controls[field.name];
@@ -162,7 +182,24 @@ async function kayitFormu(root, cfg, row = null) {
           uploadedImages.push(uploaded);
           value = uploaded.url;
         }
-        if (field.type === "image" && !field.nullable && !value) throw new Error(`${field.label} seçin veya URL girin.`);
+        if (pdfFields[field.name]) {
+          const pdf = pdfFields[field.name];
+          let url = pdf.urlInput.value.trim();
+          if (pdf.fileInput.files?.[0]) {
+            const uploaded = await belgeyiYukle(pdf.fileInput.files[0]);
+            uploadedImages.push(uploaded);
+            url = uploaded.url;
+          }
+          if (url) url = dosyaBaglantisiniDogrula(url);
+          if (field.type === "pdf") value = url;
+          else if (url) {
+            const id = crypto.randomUUID();
+            await db.insert("belgeler", { id, baslik: `${controls.baslik.value.trim()} — Tutanak`.slice(0, 200), kategori: "tutanak", dosya_url: url, surum: "1.0", durum: controls.durum.value });
+            createdDocuments.push(id);
+            value = id;
+          }
+        }
+        if (["image", "pdf"].includes(field.type) && !field.nullable && !value) throw new Error(`${field.label} seçin veya URL girin.`);
         if (value === "" && field.nullable) value = null;
         if (field.type === "datetime-local" && value) value = new Date(value).toISOString();
         if (field.type === "number" && value !== "") value = Number(value);
@@ -184,9 +221,10 @@ async function kayitFormu(root, cfg, row = null) {
       toastGoster("Kayıt kaydedildi.", "basari");
       await veriModulunuYukle(root, Object.keys(MODULLER).find(k => MODULLER[k] === cfg));
     } catch (error) {
+      await Promise.allSettled(createdDocuments.map(id => db.update("belgeler", id, { deleted_at: new Date().toISOString() })));
       await Promise.allSettled(uploadedImages.map(file => db.removeStorageObject(file.bucket, file.objectPath)));
       toastGoster(error.message || (cfg.table === "yoneticiler" ? "Yönetici kaydedilemedi. Auth UUID’sini, benzersizliği ve son admin korumasını kontrol edin." : "Kaydedilemedi. Zorunlu alanları ve rol izinlerini kontrol edin."), "hata");
-    }
+    } finally { submit.disabled = false; submit.textContent = "Kaydet"; }
   });
   root.prepend(form);
 }
@@ -309,18 +347,37 @@ async function medyaModulunuYukle(root) {
   const canUpload = ["admin", "editor"].includes(window.BABDER_ROLE);
   const form = el("form", { class: "kart", style: "max-width:700px;margin:1rem 0;" }, [el("h3", { text: "Dosya yükle" })]);
   const bucket = el("select", { class: "form-denetim", name: "bucket" }, [el("option", { value: "gorseller", text: "Görsel" }), el("option", { value: "belgeler", text: "PDF belge" })]);
-  const file = el("input", { name: "file", class: "form-denetim", type: "file", required: true, accept: "image/jpeg,image/png,image/webp,application/pdf" });
+  const file = el("input", { name: "file", class: "form-denetim", type: "file", accept: "image/jpeg,image/png,image/webp,application/pdf" });
+  const link = el("input", { name: "dosya_url", type: "url", class: "form-denetim", placeholder: "https://… (dosya seçmediyseniz)" });
+  file.addEventListener("change", () => { if (file.files?.[0]) link.value = ""; });
+  link.addEventListener("input", () => { file.value = ""; });
   const alt = el("input", { name: "alt_metin", class: "form-denetim", type: "text", maxLength: 255, placeholder: "Alternatif metin (isteğe bağlı)" });
-  for (const [label, field] of [["Dosya türü", bucket], ["Dosya", file], ["Alternatif metin", alt]]) {
+  for (const [label, field] of [["Dosya türü", bucket], ["URL ile ekle", link], ["veya cihazdan yükle", file], ["Alternatif metin", alt]]) {
     const grup = el("div", { class: "panel-form-alani" }, [el("label", { class: "form-grup", text: label }, [field])]);
     alanYardimiEkle(field, grup, "medya", field.name, label);
     form.appendChild(grup);
   }
-  form.appendChild(el("button", { class: "btn btn-ana", type: "submit", text: "Yükle" }));
+  form.appendChild(el("button", { class: "btn btn-ana", type: "submit", text: "Dosyayı veya bağlantıyı kaydet" }));
   form.addEventListener("submit", async event => {
     event.preventDefault();
     const source = file.files?.[0];
-    if (!source) return;
+    if (!source) {
+      const button = form.querySelector('[type="submit"]');
+      button.disabled = true;
+      try {
+        if (!link.value.trim()) throw new Error("Dosya seçin veya HTTPS bağlantısı yazın.");
+        const url = dosyaBaglantisiniDogrula(link.value.trim());
+        const user = JSON.parse(sessionStorage.getItem("babder_user") || "{}");
+        if (!user.id) throw new Error("Oturum bilgisi bulunamadı.");
+        const name = decodeURIComponent(new URL(url).pathname.split("/").pop() || "Dosya bağlantısı").slice(0, 255);
+        const mime = bucket.value === "belgeler" ? "application/pdf" : /\.png$/i.test(name) ? "image/png" : /\.webp$/i.test(name) ? "image/webp" : "image/jpeg";
+        await db.insert("medya", { dosya_adi: name, dosya_url: url, mime_turu: mime, boyut_bayt: 0, alt_metin: alt.value.trim() || null, yukleyen: user.id });
+        toastGoster("Dosya bağlantısı kaydedildi.", "basari");
+        await medyaModulunuYukle(root);
+      } catch (error) { toastGoster(error.message || "Bağlantı kaydedilemedi.", "hata"); }
+      finally { button.disabled = false; }
+      return;
+    }
     const image = bucket.value === "gorseller";
     const valid = image ? ["image/jpeg", "image/png", "image/webp"].includes(source.type) : source.type === "application/pdf";
     const limit = image ? 3 * 1024 * 1024 : 10 * 1024 * 1024;
@@ -356,11 +413,13 @@ async function medyaModulunuYukle(root) {
     const records = await db.select("medya", "order=created_at.desc");
     if (!records.length) list.appendChild(el("p", { class: "kart", text: "Henüz dosya yüklenmedi." }));
     for (const record of records) {
-      const card = el("article", { class: "kart" }, [el("h3", { text: record.dosya_adi }), el("p", { text: `${record.mime_turu} • ${Math.ceil(record.boyut_bayt / 1024)} KB` }), el("a", { href: record.dosya_url, target: "_blank", rel: "noopener noreferrer", text: "Dosyayı aç" }), el("button", { class: "btn btn-ikincil", text: "URL’yi kopyala", onclick: async () => { try { await navigator.clipboard.writeText(record.dosya_url); toastGoster("Dosya URL’si kopyalandı.", "basari"); } catch { toastGoster("URL kopyalanamadı; bağlantıyı açıp adres çubuğundan kopyalayın.", "hata"); } } })]);
+      const card = el("article", { class: "kart" }, [el("h3", { text: record.dosya_adi }), el("p", { text: `${record.mime_turu} • ${record.boyut_bayt ? Math.ceil(record.boyut_bayt / 1024) + " KB" : "Boyut bilgisi yok"}` }), el("a", { href: record.dosya_url, target: "_blank", rel: "noopener noreferrer", text: "Dosyayı aç" }), el("button", { class: "btn btn-ikincil", text: "URL’yi kopyala", onclick: async () => { try { await navigator.clipboard.writeText(record.dosya_url); toastGoster("Dosya URL’si kopyalandı.", "basari"); } catch { toastGoster("URL kopyalanamadı; bağlantıyı açıp adres çubuğundan kopyalayın.", "hata"); } } })]);
       if (record.mime_turu.startsWith("image/")) card.prepend(el("img", { src: record.dosya_url, alt: record.alt_metin || "", style: "width:100%;height:180px;object-fit:cover;" }));
-      if (window.BABDER_ROLE === "admin") card.appendChild(el("button", { class: "btn btn-ikincil", text: "Dosyayı ve kaydı sil", onclick: async () => {
-        if (!confirm("Dosya Storage’dan ve medya listesinden kalıcı olarak silinsin mi?")) return;
+      const storedHere = record.dosya_url.startsWith(`${db.url}/storage/v1/object/public/`);
+      if (window.BABDER_ROLE === "admin") card.appendChild(el("button", { class: "btn btn-ikincil", text: storedHere ? "Dosyayı ve kaydı sil" : "Bağlantıyı listeden kaldır", onclick: async () => {
+        if (!confirm(storedHere ? "Dosya Storage’dan ve medya listesinden kalıcı olarak silinsin mi?" : "Bağlantı medya listesinden kaldırılsın mı? Dış sitedeki dosya silinmez.")) return;
         try {
+          if (storedHere) {
           const url = new URL(record.dosya_url);
           const marker = "/storage/v1/object/public/";
           const position = url.pathname.indexOf(marker);
@@ -368,6 +427,7 @@ async function medyaModulunuYukle(root) {
           const [bucketName, ...parts] = url.pathname.slice(position + marker.length).split("/");
           const path = parts.map(decodeURIComponent).join("/");
           await db.removeStorageObject(decodeURIComponent(bucketName), path);
+          }
           await db.delete("medya", record.id);
           toastGoster("Dosya silindi.", "basari");
           await medyaModulunuYukle(root);

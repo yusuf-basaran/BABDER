@@ -136,6 +136,24 @@ class SupabaseApi {
     return sonuc;
   }
 
+  async authUser() { return (await this._request("/auth/v1/user")).json(); }
+  async mfaEnroll() { return (await this._request("/auth/v1/factors", { method: "POST", body: JSON.stringify({ factor_type: "totp", friendly_name: `BABDER-${Date.now()}`, issuer: "BABDER" }) })).json(); }
+  async mfaUnenroll(factorId) { return this._request(`/auth/v1/factors/${encodeURIComponent(factorId)}`, { method: "DELETE" }); }
+  async mfaVerify(factorId, code) {
+    const challenge = await (await this._request(`/auth/v1/factors/${encodeURIComponent(factorId)}/challenge`, { method: "POST", body: "{}" })).json();
+    const session = await (await this._request(`/auth/v1/factors/${encodeURIComponent(factorId)}/verify`, { method: "POST", body: JSON.stringify({ challenge_id: challenge.id, code }) })).json();
+    sessionStorage.setItem("babder_token", session.access_token);
+    sessionStorage.setItem("babder_refresh_token", session.refresh_token);
+    sessionStorage.setItem("babder_expires_at", String(Date.now() + session.expires_in * 1000));
+    if (session.user) sessionStorage.setItem("babder_user", JSON.stringify(session.user));
+    return session;
+  }
+
+  assuranceLevel() {
+    try { const payload = sessionStorage.getItem("babder_token").split(".")[1].replaceAll("-", "+").replaceAll("_", "/"); return JSON.parse(atob(payload)).aal || "aal1"; }
+    catch { return "aal1"; }
+  }
+
   signOut(reason = "") {
     const token = sessionStorage.getItem("babder_token");
     if (token) fetch(`${this.url}/auth/v1/logout`, { method: "POST", headers: { apikey: this.key, Authorization: `Bearer ${token}` }, keepalive: true }).catch(() => {});

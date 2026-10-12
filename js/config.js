@@ -8,3 +8,4 @@ export const CONFIG = {
 
 // Yayın öncesinde derneğin doğrulanmış alan adıyla değiştirin.
 export const SITE_URL = "https://[ALAN-ADINIZ]";
+export const TURNSTILE_SITE_KEY = "[TURNSTILE_SITE_KEY]";

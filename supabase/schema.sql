@@ -396,6 +396,9 @@ DECLARE
 BEGIN
     SELECT rol INTO kullanici_rol FROM yoneticiler
     WHERE user_id = auth.uid() AND aktif = TRUE;
+    IF kullanici_rol = 'admin' AND COALESCE(auth.jwt() ->> 'aal', 'aal1') <> 'aal2' THEN
+        RETURN NULL;
+    END IF;
     RETURN kullanici_rol;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, pg_temp;
@@ -741,3 +744,20 @@ INSERT INTO ayarlar (anahtar, deger, aciklama, halka_acik, hassas) VALUES
 ('cerez_banner_metin', 'Sitemizde yalnızca güvenli oturum ve zorunlu işlevler için yerel depolama kullanılmaktadır.', 'Çerez bilgilendirme metni', TRUE, FALSE),
 ('site_temasi', 'dernek_yesili', 'Aktif görsel tema adı', TRUE, FALSE)
 ON CONFLICT (anahtar) DO NOTHING;
+
+-- Genel formlar yalnızca doğrulanmış Edge Function üzerinden yazılır.
+DROP POLICY IF EXISTS "basvuru_anon_ekleme" ON uyelik_basvurulari;
+DROP POLICY IF EXISTS "mesaj_anon_ekleme" ON iletisim_mesajlari;
+CREATE TABLE IF NOT EXISTS form_hiz_siniri (ip_hash TEXT NOT NULL, saat TIMESTAMPTZ NOT NULL, adet INT NOT NULL DEFAULT 1, PRIMARY KEY(ip_hash,saat));
+ALTER TABLE form_hiz_siniri ENABLE ROW LEVEL SECURITY;
+CREATE OR REPLACE FUNCTION form_hiz_sinirini_kullan(p_ip_hash TEXT) RETURNS BOOLEAN LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,pg_temp AS $$
+DECLARE kullanim INT;
+BEGIN
+ IF length(p_ip_hash) <> 64 THEN RAISE EXCEPTION 'Geçersiz istek'; END IF;
+ DELETE FROM form_hiz_siniri WHERE saat < NOW() - INTERVAL '1 day';
+ INSERT INTO form_hiz_siniri(ip_hash,saat,adet) VALUES(p_ip_hash,date_trunc('hour',NOW()),1)
+ ON CONFLICT(ip_hash,saat) DO UPDATE SET adet=form_hiz_siniri.adet+1 RETURNING adet INTO kullanim;
+ RETURN kullanim <= 5;
+END; $$;
+REVOKE ALL ON FUNCTION form_hiz_sinirini_kullan(TEXT) FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION form_hiz_sinirini_kullan(TEXT) TO service_role;

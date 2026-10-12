@@ -6,6 +6,7 @@ import { ayarlarModulunuYukle } from "./ayarlar.js";
 import { guvenlikModulunuYukle } from "./guvenlik.js";
 import { veriModulunuYukle } from "./veri.js";
 import { temaYonetiminiBaslat } from "../tema.js";
+import { mfaAkisiniGoster } from "./mfa.js";
 
 const token = sessionStorage.getItem("babder_token");
 if (!token && !window.location.pathname.includes("giris.html")) {
@@ -27,6 +28,12 @@ async function paneliBaslat() {
       throw new Error("Bu Supabase hesabı etkin BABDER yöneticisi olarak tanımlı değil. Auth kullanıcı UUID’si yoneticiler tablosunda bulunmalı ve aktif olmalı.");
     }
     window.BABDER_ROLE = manager.rol;
+    const authUser = await db.authUser();
+    const hasFactor = authUser.factors?.some(item => item.factor_type === "totp" && item.status === "verified");
+    if ((manager.rol === "admin" || hasFactor) && db.assuranceLevel() !== "aal2") {
+      window.location.href = "/yonetim/giris.html";
+      return;
+    }
     document.body.dataset.role = manager.rol;
     document.getElementById("yonetici-adi").textContent = manager.ad;
     erisimleriAyarla(manager.rol);
@@ -38,6 +45,7 @@ async function paneliBaslat() {
   komutPaletiniBaslat();
   oturumZamanAsimiDenetle();
   document.getElementById("cikis-btn")?.addEventListener("click", () => db.signOut());
+  document.getElementById("mfa-kurulum-btn")?.addEventListener("click", () => mfaAkisiniGoster(document.getElementById("modul-alani"), () => window.location.reload()));
   const menuButton = document.getElementById("panel-menu-tetikleyici");
   const sidebar = document.getElementById("panel-kenar");
   menuButton?.addEventListener("click", () => {

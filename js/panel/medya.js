@@ -35,7 +35,7 @@ export async function gorseliYukle(dosya) {
   return { url, bucket: "gorseller", objectPath };
 }
 
-export async function gorseliWebpSikistir(dosya, maksGenislik = 1600, kalite = 0.82) {
+export async function gorseliWebpSikistir(dosya, maksGenislik = 1600, kalite = 0.85) {
   return new Promise((resolve, reject) => {
     const okuyucu = new FileReader();
     okuyucu.onload = (e) => {

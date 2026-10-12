@@ -1,4 +1,5 @@
-import { db } from "./api.js";
+import { formGuvenliginiBaslat, guvenliFormGonder } from "./form-guvenligi.js";
+formGuvenliginiBaslat();
 
 function formSonucunuGoster(hedef, mesaj, hata = false) {
   if (!hedef) return;
@@ -25,11 +26,11 @@ document.getElementById("iletisim-formu")?.addEventListener("submit", async even
   const submit = form.querySelector('[type="submit"]');
   submit.disabled = true;
   try {
-    await db.insert("iletisim_mesajlari", veri);
+    await guvenliFormGonder("iletisim", veri, form);
     formSonucunuGoster(sonuc, "Mesajınız iletildi.");
     form.reset();
-  } catch {
-    formSonucunuGoster(sonuc, "Mesaj iletilemedi. Lütfen daha sonra yeniden deneyin.", true);
+  } catch (error) {
+    formSonucunuGoster(sonuc, error.message || "Mesaj iletilemedi. Lütfen daha sonra yeniden deneyin.", true);
   } finally {
     submit.disabled = false;
   }
@@ -54,11 +55,11 @@ document.getElementById("uyelik-formu")?.addEventListener("submit", async event 
   const submit = form.querySelector('[type="submit"]');
   submit.disabled = true;
   try {
-    await db.insert("uyelik_basvurulari", veri);
+    await guvenliFormGonder("uyelik", veri, form);
     formSonucunuGoster(sonuc, "Başvurunuz başarıyla iletildi. Yönetim kurulumuz sizinle irtibata geçecektir.");
     form.reset();
-  } catch {
-    formSonucunuGoster(sonuc, "Başvuru iletilemedi. Lütfen bilgilerinizi kontrol edip yeniden deneyin.", true);
+  } catch (error) {
+    formSonucunuGoster(sonuc, error.message || "Başvuru iletilemedi. Lütfen bilgilerinizi kontrol edip yeniden deneyin.", true);
   } finally {
     submit.disabled = false;
   }

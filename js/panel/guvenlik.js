@@ -160,7 +160,7 @@ async function kvkkAraclariniGoster(hedef) {
           try {
             const silinenler = await db.rpc("kvkk_kisi_verilerini_sil", { p_eposta: eposta });
             toastGoster(`Silme tamamlandı: ${silinenler.basvurular} başvuru, ${silinenler.mesajlar} mesaj, ${silinenler.uyeler} üye kaydı.`, "basari");
-            sonucAlani.innerHTML = "";
+            sonucAlani.replaceChildren(el("p", { role: "status", "aria-live": "polite", text: `Silme tamamlandı: ${silinenler.basvurular} başvuru, ${silinenler.mesajlar} mesaj, ${silinenler.uyeler} üye kaydı.` }));
             aramaInput.value = "";
           } catch {
             toastGoster("Silme işlemi esnasında hata oluştu.", "hata");

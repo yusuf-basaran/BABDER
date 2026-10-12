@@ -4,16 +4,17 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Yönetici Girişi | BABDER Panel</title>
-  <link rel="stylesheet" href="/css/style.css">
-  <link rel="stylesheet" href="/css/panel.css">
+  <link rel="icon" type="image/png" href="../img/logo.png">
+  <link rel="shortcut icon" type="image/png" href="../img/logo.png">
+  <link rel="apple-touch-icon" href="../img/logo.png">
+  <link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="../css/panel.css">
   <meta name="robots" content="noindex, nofollow">
 </head>
-<body style="display: flex; align-items: center; justify-content: center; min-height: 100vh;">
-  <div class="kart" style="width: 100%; max-width: 400px; padding: 2rem;">
-    <div style="text-align: center; margin-bottom: 1.5rem;">
-      <img src="/img/logo.png" alt="BABDER Logo" style="width: 64px; height: 64px;">
-      <h1 style="font-size: 1.25rem; margin-top: 0.5rem;">BABDER Yönetim Paneli</h1>
-    </div>
+<body class="giris-kapsayici">
+  <div class="kart giris-karti">
+    <img src="../img/logo.png" alt="BABDER Logo" class="giris-logo">
+    <h1 class="giris-baslik">BABDER Yönetim Paneli</h1>
 
     <form id="giris-formu">
       <div class="form-grup">
@@ -26,19 +27,20 @@
         <input type="password" id="sifre" class="form-denetim" required minlength="12" autocomplete="current-password">
       </div>
 
-      <button type="submit" id="giris-btn" class="btn btn-ana" style="width: 100%; margin-top: 1rem;">Giriş Yap</button>
-      <div id="giris-hata" style="color: var(--renk-hata); margin-top: 1rem; font-size: 0.85rem;" role="alert"></div>
+      <button type="submit" id="giris-btn" class="btn btn-ana full-width">Giriş Yap</button>
+      <div id="giris-hata" class="toast-hata gizli" role="alert"></div>
     </form>
   </div>
 
   <script type="module">
-    import { db } from "/js/api.js";
+    import { db } from "../js/api.js";
 
     document.getElementById("giris-formu")?.addEventListener("submit", async (e) => {
       e.preventDefault();
       const hataKutusu = document.getElementById("giris-hata");
       const btn = document.getElementById("giris-btn");
       hataKutusu.textContent = "";
+      hataKutusu.classList.add("gizli");
       btn.disabled = true;
 
       const email = document.getElementById("eposta").value.trim();
@@ -46,9 +48,10 @@
 
       try {
         await db.signIn(email, sifre);
-        window.location.href = "/yonetim/index.html";
+        window.location.href = "./index.html";
       } catch (err) {
         hataKutusu.textContent = "E-posta veya şifre hatalı.";
+        hataKutusu.classList.remove("gizli");
         btn.disabled = false;
       }
     });

@@ -21,13 +21,15 @@ async function paneliBaslat() {
     if (!user.id) throw new Error("Oturum bulunamadı.");
     const managers = await db.select("yoneticiler", `user_id=eq.${encodeURIComponent(user.id)}&select=rol,ad,aktif&limit=1`);
     const manager = managers[0];
-    if (!manager?.aktif || !["admin", "editor", "goruntuleyici"].includes(manager.rol)) throw new Error("Panel yetkisi yok.");
+    if (!manager?.aktif || !["admin", "editor", "goruntuleyici"].includes(manager.rol)) {
+      throw new Error("Bu Supabase hesabı etkin BABDER yöneticisi olarak tanımlı değil. Auth kullanıcı UUID’si yoneticiler tablosunda bulunmalı ve aktif olmalı.");
+    }
     window.BABDER_ROLE = manager.rol;
     document.body.dataset.role = manager.rol;
     document.getElementById("yonetici-adi").textContent = manager.ad;
     erisimleriAyarla(manager.rol);
-  } catch {
-    db.signOut();
+  } catch (error) {
+    db.signOut(error.message || "Panel yetkisi doğrulanamadı. Supabase bağlantısını ve yönetici kaydınızı kontrol edin.");
     return;
   }
   modulYonlendir();

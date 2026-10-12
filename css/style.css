@@ -13,6 +13,7 @@
   --renk-sinir: #DDE5DC;
   --renk-hata: #C53030;
   --renk-basari: #22543D;
+
   --yazi-fontu: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   --bosluk-xs: 0.25rem;
   --bosluk-s: 0.5rem;
@@ -85,6 +86,7 @@ body {
   outline-offset: 3px;
 }
 
+/* Header */
 .site-header {
   background-color: var(--renk-yuzey);
   border-bottom: 2px solid var(--renk-sinir);
@@ -99,6 +101,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: var(--bosluk-m);
 }
 .marka-alani {
   display: flex;
@@ -106,11 +109,13 @@ body {
   gap: var(--bosluk-m);
   text-decoration: none;
   color: var(--renk-ana-koyu);
+  min-width: 0;
 }
 .marka-logo {
-  width: 52px;
-  height: 52px;
+  width: 48px;
+  height: 48px;
   object-fit: contain;
+  flex-shrink: 0;
 }
 .marka-baslik {
   font-size: 1.15rem;
@@ -121,6 +126,15 @@ body {
   font-size: 0.75rem;
   color: var(--renk-metin-soluk);
   display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.header-aksiyonlar {
+  display: flex;
+  align-items: center;
+  gap: var(--bosluk-s);
 }
 
 .ana-menu ul {
@@ -136,12 +150,30 @@ body {
   padding: var(--bosluk-xs) var(--bosluk-s);
   border-radius: var(--yuvarlaklik);
   transition: color 0.2s, background 0.2s;
+  display: inline-block;
 }
 .ana-menu a:hover {
   color: var(--renk-ana);
   background: var(--renk-zemin);
 }
 
+/* Mobil Menü Butonu */
+.mobil-menu-btn {
+  display: none;
+  background: transparent;
+  border: 1px solid var(--renk-sinir);
+  padding: 0.5rem;
+  border-radius: var(--yuvarlaklik);
+  cursor: pointer;
+  color: var(--renk-metin);
+}
+.mobil-menu-btn svg {
+  display: block;
+  width: 24px;
+  height: 24px;
+}
+
+/* Butonlar */
 .btn {
   display: inline-flex;
   align-items: center;
@@ -153,6 +185,7 @@ body {
   cursor: pointer;
   border: 2px solid transparent;
   transition: background 0.2s, border-color 0.2s, color 0.2s;
+  white-space: nowrap;
 }
 .btn-ana {
   background-color: var(--renk-ana);
@@ -191,11 +224,18 @@ body {
   display: none;
 }
 
+/* CSP İhlallerini Önleyen Sınıflar */
 .hero-alani {
   background-color: var(--renk-bugday);
   padding: var(--bosluk-xl) var(--bosluk-m);
   position: relative;
   overflow: hidden;
+}
+.hero-aksiyonlar {
+  margin-top: 1.5rem;
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
 }
 .hero-desen {
   position: absolute;
@@ -211,10 +251,21 @@ body {
   margin: 0 auto;
   padding: 0 var(--bosluk-m);
 }
+.bolum-bosluk-buyuk {
+  padding: 3rem 1rem;
+}
+.bolum-yuzey-zemin {
+  background-color: var(--renk-yuzey);
+  padding: 3rem 1rem;
+}
+.footer-link-liste {
+  list-style: none;
+}
 
+/* Izgara */
 .izgara-3 {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: var(--bosluk-l);
   margin: var(--bosluk-l) 0;
 }
@@ -267,6 +318,7 @@ body {
   visibility: hidden;
 }
 
+/* Çerez Banner */
 .cerez-kapsayici {
   position: fixed;
   bottom: 0;
@@ -288,6 +340,7 @@ body {
   flex-wrap: wrap;
 }
 
+/* Footer */
 .site-footer {
   background-color: var(--renk-ana-koyu);
   color: #FFFFFF;
@@ -307,4 +360,45 @@ body {
   padding-top: var(--bosluk-m);
   font-size: 0.85rem;
   text-align: center;
+}
+
+/* Mobil Çekmece Kuralları */
+@media (max-width: 900px) {
+  .mobil-menu-btn {
+    display: inline-flex;
+  }
+  .ana-menu {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background-color: var(--renk-yuzey);
+    border-bottom: 2px solid var(--renk-sinir);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+    padding: var(--bosluk-m);
+  }
+  .ana-menu.acik {
+    display: block;
+  }
+  .ana-menu ul {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--bosluk-xs);
+  }
+  .ana-menu a {
+    padding: 0.75rem var(--bosluk-m);
+    width: 100%;
+  }
+  .hero-alani {
+    padding: var(--bosluk-l) var(--bosluk-m);
+  }
+  .hero-desen {
+    width: 200px;
+    height: 200px;
+    opacity: 0.08;
+  }
+  .marka-alt-baslik {
+    display: none;
+  }
 }

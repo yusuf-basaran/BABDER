@@ -8,4 +8,4 @@ export const CONFIG = {
 
 // Özel alan adına geçildiğinde bu adresi güncelleyin.
 export const SITE_URL = "https://babder.vercel.app";
-export const TURNSTILE_SITE_KEY = "[TURNSTILE_SITE_KEY]";
+export const TURNSTILE_SITE_KEY = "0x4AAAAAAFVCHbfWkUSMHpf3";

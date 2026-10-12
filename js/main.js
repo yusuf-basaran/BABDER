@@ -6,6 +6,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   cerezBanneriBaslat();
   temaYonetimiBaslat();
   menuyuYukle();
+  googleSchemaOlustur();
 });
 
 async function ayarlarıVeBakimiDenetle() {
@@ -97,4 +98,32 @@ async function menuyuYukle() {
       menuListe.appendChild(li);
     });
   }
+}
+
+// Google Resmi Arama Sonuçları İçin Yapılandırılmış Veri (Schema.org / JSON-LD)
+function googleSchemaOlustur() {
+  const schemaVerisi = {
+    "@context": "https://schema.org",
+    "@type": "NonProfitOrganization",
+    "name": "Şanlıurfa Siverek Kapıkaya Bab Köyü ve Köyleri Sosyal Yardımlaşma ve Dayanışma Derneği",
+    "alternateName": "BABDER",
+    "url": window.location.origin,
+    "logo": `${window.location.origin}/img/logo.png`,
+    "description": "Şanlıurfa Siverek Kapıkaya Bab Köyü ve çevre köylerinin sosyal yardımlaşma ve dayanışma derneği resmi web sitesi.",
+    "foundingDate": "2019",
+    "address": {
+      "@type": "PostalAddress",
+      "addressLocality": "Siverek",
+      "addressRegion": "Şanlıurfa",
+      "addressCountry": "TR"
+    },
+    "sameAs": [
+      "https://www.facebook.com/share/1DsdbdzV3n/"
+    ]
+  };
+
+  const script = document.createElement("script");
+  script.type = "application/ld+json";
+  script.textContent = JSON.stringify(schemaVerisi);
+  document.head.appendChild(script);
 }

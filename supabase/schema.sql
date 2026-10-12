@@ -327,7 +327,7 @@ BEGIN
     WHERE user_id = auth.uid() AND aktif = TRUE;
     RETURN kullanici_rol;
 END;
-$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, pg_temp;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, pg_temp;
 
 DROP POLICY IF EXISTS "yoneticiler_okuma" ON yoneticiler;
 CREATE POLICY "yoneticiler_okuma" ON yoneticiler FOR SELECT TO authenticated USING (user_id = auth.uid() OR mevcut_kullanici_rolu() = 'admin');

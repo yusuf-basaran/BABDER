@@ -167,3 +167,42 @@ body.panel-govde {
 }
 .toast-basari { background: var(--renk-basari); }
 .toast-hata { background: var(--renk-hata); }
+
+/* Yönetici Giriş Ekranı ve Logo Boyutu */
+.giris-kapsayici {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 1rem;
+}
+.giris-karti {
+  width: 100%;
+  max-width: 420px;
+  padding: 2.5rem 2rem;
+  text-align: center;
+}
+.giris-logo {
+  width: 64px;
+  height: 64px;
+  max-width: 64px;
+  max-height: 64px;
+  object-fit: contain;
+  margin: 0 auto 1rem auto;
+  display: block;
+}
+.giris-baslik {
+  font-size: 1.25rem;
+  margin-bottom: 1.5rem;
+  color: var(--renk-ana-koyu);
+}
+.full-width {
+  width: 100%;
+}
+.mt-2 {
+  margin-top: 1rem;
+}
+.soluk-metin {
+  font-size: 0.85rem;
+  color: var(--renk-metin-soluk);
+}

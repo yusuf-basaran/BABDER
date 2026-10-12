@@ -327,65 +327,128 @@ BEGIN
     WHERE user_id = auth.uid() AND aktif = TRUE;
     RETURN kullanici_rol;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, pg_temp;
 
+DROP POLICY IF EXISTS "yoneticiler_okuma" ON yoneticiler;
 CREATE POLICY "yoneticiler_okuma" ON yoneticiler FOR SELECT TO authenticated USING (user_id = auth.uid() OR mevcut_kullanici_rolu() = 'admin');
+DROP POLICY IF EXISTS "yoneticiler_admin_yazma" ON yoneticiler;
 CREATE POLICY "yoneticiler_admin_yazma" ON yoneticiler FOR ALL TO authenticated USING (mevcut_kullanici_rolu() = 'admin');
+DROP POLICY IF EXISTS "ayarlar_kamu_okuma" ON ayarlar;
 CREATE POLICY "ayarlar_kamu_okuma" ON ayarlar FOR SELECT TO anon, authenticated USING (halka_acik = TRUE);
+DROP POLICY IF EXISTS "ayarlar_admin_okuma" ON ayarlar;
 CREATE POLICY "ayarlar_admin_okuma" ON ayarlar FOR SELECT TO authenticated USING (mevcut_kullanici_rolu() IS NOT NULL);
+DROP POLICY IF EXISTS "ayarlar_admin_yonetim" ON ayarlar;
 CREATE POLICY "ayarlar_admin_yonetim" ON ayarlar FOR ALL TO authenticated USING (mevcut_kullanici_rolu() = 'admin');
+DROP POLICY IF EXISTS "menu_kamu_okuma" ON menu_ogeleri;
 CREATE POLICY "menu_kamu_okuma" ON menu_ogeleri FOR SELECT TO anon, authenticated USING (aktif = TRUE);
+DROP POLICY IF EXISTS "sayfalar_kamu_okuma" ON sayfalar;
 CREATE POLICY "sayfalar_kamu_okuma" ON sayfalar FOR SELECT TO anon, authenticated USING (durum = 'yayinda' AND deleted_at IS NULL);
-CREATE POLICY "sayfa_bolumleri_kamu_okuma" ON sayfa_bolumleri FOR SELECT TO anon, authenticated USING (TRUE);
+DROP POLICY IF EXISTS "sayfa_bolumleri_kamu_okuma" ON sayfa_bolumleri;
+CREATE POLICY "sayfa_bolumleri_kamu_okuma" ON sayfa_bolumleri FOR SELECT TO anon, authenticated
+USING (EXISTS (
+    SELECT 1 FROM sayfalar s
+    WHERE s.id = sayfa_bolumleri.sayfa_id
+      AND s.durum = 'yayinda'
+      AND s.deleted_at IS NULL
+));
+DROP POLICY IF EXISTS "sayfa_bolumleri_panel_okuma" ON sayfa_bolumleri;
+CREATE POLICY "sayfa_bolumleri_panel_okuma" ON sayfa_bolumleri FOR SELECT TO authenticated
+USING (mevcut_kullanici_rolu() IN ('admin', 'editor', 'goruntuleyici'));
+DROP POLICY IF EXISTS "anasayfa_bolumleri_kamu_okuma" ON anasayfa_bolumleri;
 CREATE POLICY "anasayfa_bolumleri_kamu_okuma" ON anasayfa_bolumleri FOR SELECT TO anon, authenticated USING (aktif = TRUE);
+DROP POLICY IF EXISTS "haberler_kamu_okuma" ON haberler;
 CREATE POLICY "haberler_kamu_okuma" ON haberler FOR SELECT TO anon, authenticated USING (durum = 'yayinda' AND yayin_tarihi <= NOW() AND deleted_at IS NULL);
+DROP POLICY IF EXISTS "duyurular_kamu_okuma" ON duyurular;
 CREATE POLICY "duyurular_kamu_okuma" ON duyurular FOR SELECT TO anon, authenticated USING (durum = 'yayinda' AND yayin_tarihi <= NOW() AND (bitis_tarihi IS NULL OR bitis_tarihi >= NOW()) AND deleted_at IS NULL);
+DROP POLICY IF EXISTS "etkinlikler_kamu_okuma" ON etkinlikler;
 CREATE POLICY "etkinlikler_kamu_okuma" ON etkinlikler FOR SELECT TO anon, authenticated USING (durum = 'yayinda' AND deleted_at IS NULL);
+DROP POLICY IF EXISTS "albumler_kamu_okuma" ON albumler;
 CREATE POLICY "albumler_kamu_okuma" ON albumler FOR SELECT TO anon, authenticated USING (deleted_at IS NULL);
+DROP POLICY IF EXISTS "galeri_kamu_okuma" ON galeri;
 CREATE POLICY "galeri_kamu_okuma" ON galeri FOR SELECT TO anon, authenticated USING (deleted_at IS NULL);
+DROP POLICY IF EXISTS "kurul_kamu_okuma" ON yonetim_kurulu;
 CREATE POLICY "kurul_kamu_okuma" ON yonetim_kurulu FOR SELECT TO anon, authenticated USING (deleted_at IS NULL);
+DROP POLICY IF EXISTS "koyler_kamu_okuma" ON koyler;
 CREATE POLICY "koyler_kamu_okuma" ON koyler FOR SELECT TO anon, authenticated USING (deleted_at IS NULL);
+DROP POLICY IF EXISTS "belgeler_kamu_okuma" ON belgeler;
 CREATE POLICY "belgeler_kamu_okuma" ON belgeler FOR SELECT TO anon, authenticated USING (durum = 'yayinda' AND deleted_at IS NULL);
+DROP POLICY IF EXISTS "hukuki_kamu_okuma" ON hukuki_metinler;
 CREATE POLICY "hukuki_kamu_okuma" ON hukuki_metinler FOR SELECT TO anon, authenticated USING (aktif = TRUE);
+DROP POLICY IF EXISTS "icerik_panel_okuma" ON haberler;
 CREATE POLICY "icerik_panel_okuma" ON haberler FOR SELECT TO authenticated USING (mevcut_kullanici_rolu() IS NOT NULL);
+DROP POLICY IF EXISTS "icerik_panel_yazma" ON haberler;
 CREATE POLICY "icerik_panel_yazma" ON haberler FOR ALL TO authenticated USING (mevcut_kullanici_rolu() IN ('admin', 'editor'));
+DROP POLICY IF EXISTS "duyurular_panel_okuma" ON duyurular;
 CREATE POLICY "duyurular_panel_okuma" ON duyurular FOR SELECT TO authenticated USING (mevcut_kullanici_rolu() IS NOT NULL);
+DROP POLICY IF EXISTS "duyurular_panel_yazma" ON duyurular;
 CREATE POLICY "duyurular_panel_yazma" ON duyurular FOR ALL TO authenticated USING (mevcut_kullanici_rolu() IN ('admin', 'editor'));
+DROP POLICY IF EXISTS "etkinlikler_panel_okuma" ON etkinlikler;
 CREATE POLICY "etkinlikler_panel_okuma" ON etkinlikler FOR SELECT TO authenticated USING (mevcut_kullanici_rolu() IS NOT NULL);
+DROP POLICY IF EXISTS "etkinlikler_panel_yazma" ON etkinlikler;
 CREATE POLICY "etkinlikler_panel_yazma" ON etkinlikler FOR ALL TO authenticated USING (mevcut_kullanici_rolu() IN ('admin', 'editor'));
+DROP POLICY IF EXISTS "galeri_panel_okuma" ON galeri;
 CREATE POLICY "galeri_panel_okuma" ON galeri FOR SELECT TO authenticated USING (mevcut_kullanici_rolu() IS NOT NULL);
+DROP POLICY IF EXISTS "galeri_panel_yazma" ON galeri;
 CREATE POLICY "galeri_panel_yazma" ON galeri FOR ALL TO authenticated USING (mevcut_kullanici_rolu() IN ('admin', 'editor'));
+DROP POLICY IF EXISTS "albumler_panel_yazma" ON albumler;
 CREATE POLICY "albumler_panel_yazma" ON albumler FOR ALL TO authenticated USING (mevcut_kullanici_rolu() IN ('admin', 'editor'));
+DROP POLICY IF EXISTS "kurul_panel_yazma" ON yonetim_kurulu;
 CREATE POLICY "kurul_panel_yazma" ON yonetim_kurulu FOR ALL TO authenticated USING (mevcut_kullanici_rolu() IN ('admin', 'editor'));
+DROP POLICY IF EXISTS "koyler_panel_yazma" ON koyler;
 CREATE POLICY "koyler_panel_yazma" ON koyler FOR ALL TO authenticated USING (mevcut_kullanici_rolu() IN ('admin', 'editor'));
+DROP POLICY IF EXISTS "belgeler_panel_yazma" ON belgeler;
 CREATE POLICY "belgeler_panel_yazma" ON belgeler FOR ALL TO authenticated USING (mevcut_kullanici_rolu() IN ('admin', 'editor'));
+DROP POLICY IF EXISTS "sayfalar_panel_yazma" ON sayfalar;
 CREATE POLICY "sayfalar_panel_yazma" ON sayfalar FOR ALL TO authenticated USING (mevcut_kullanici_rolu() IN ('admin', 'editor'));
+DROP POLICY IF EXISTS "sayfa_bolumleri_panel_yazma" ON sayfa_bolumleri;
 CREATE POLICY "sayfa_bolumleri_panel_yazma" ON sayfa_bolumleri FOR ALL TO authenticated USING (mevcut_kullanici_rolu() IN ('admin', 'editor'));
+DROP POLICY IF EXISTS "anasayfa_bolumleri_panel_yazma" ON anasayfa_bolumleri;
 CREATE POLICY "anasayfa_bolumleri_panel_yazma" ON anasayfa_bolumleri FOR ALL TO authenticated USING (mevcut_kullanici_rolu() IN ('admin', 'editor'));
+DROP POLICY IF EXISTS "menu_panel_yazma" ON menu_ogeleri;
 CREATE POLICY "menu_panel_yazma" ON menu_ogeleri FOR ALL TO authenticated USING (mevcut_kullanici_rolu() IN ('admin', 'editor'));
+DROP POLICY IF EXISTS "hukuki_panel_okuma" ON hukuki_metinler;
 CREATE POLICY "hukuki_panel_okuma" ON hukuki_metinler FOR SELECT TO authenticated USING (mevcut_kullanici_rolu() IS NOT NULL);
+DROP POLICY IF EXISTS "hukuki_admin_yazma" ON hukuki_metinler;
 CREATE POLICY "hukuki_admin_yazma" ON hukuki_metinler FOR ALL TO authenticated USING (mevcut_kullanici_rolu() = 'admin');
 
+DROP POLICY IF EXISTS "basvuru_anon_ekleme" ON uyelik_basvurulari;
 CREATE POLICY "basvuru_anon_ekleme" ON uyelik_basvurulari FOR INSERT TO anon, authenticated WITH CHECK (kvkk_onay = TRUE);
+DROP POLICY IF EXISTS "basvuru_yetkili_okuma" ON uyelik_basvurulari;
 CREATE POLICY "basvuru_yetkili_okuma" ON uyelik_basvurulari FOR SELECT TO authenticated USING (mevcut_kullanici_rolu() IN ('admin', 'editor'));
+DROP POLICY IF EXISTS "basvuru_yetkili_guncelleme" ON uyelik_basvurulari;
 CREATE POLICY "basvuru_yetkili_guncelleme" ON uyelik_basvurulari FOR UPDATE TO authenticated USING (mevcut_kullanici_rolu() IN ('admin', 'editor'));
+DROP POLICY IF EXISTS "basvuru_admin_silme" ON uyelik_basvurulari;
 CREATE POLICY "basvuru_admin_silme" ON uyelik_basvurulari FOR DELETE TO authenticated USING (mevcut_kullanici_rolu() = 'admin');
 
+DROP POLICY IF EXISTS "mesaj_anon_ekleme" ON iletisim_mesajlari;
 CREATE POLICY "mesaj_anon_ekleme" ON iletisim_mesajlari FOR INSERT TO anon, authenticated WITH CHECK (kvkk_onay = TRUE);
+DROP POLICY IF EXISTS "mesaj_yetkili_okuma" ON iletisim_mesajlari;
 CREATE POLICY "mesaj_yetkili_okuma" ON iletisim_mesajlari FOR SELECT TO authenticated USING (mevcut_kullanici_rolu() IN ('admin', 'editor'));
+DROP POLICY IF EXISTS "mesaj_yetkili_guncelleme" ON iletisim_mesajlari;
 CREATE POLICY "mesaj_yetkili_guncelleme" ON iletisim_mesajlari FOR UPDATE TO authenticated USING (mevcut_kullanici_rolu() IN ('admin', 'editor'));
+DROP POLICY IF EXISTS "mesaj_admin_silme" ON iletisim_mesajlari;
 CREATE POLICY "mesaj_admin_silme" ON iletisim_mesajlari FOR DELETE TO authenticated USING (mevcut_kullanici_rolu() = 'admin');
 
+DROP POLICY IF EXISTS "uyeler_yetkili_okuma" ON uyeler;
 CREATE POLICY "uyeler_yetkili_okuma" ON uyeler FOR SELECT TO authenticated USING (mevcut_kullanici_rolu() IN ('admin', 'editor'));
+DROP POLICY IF EXISTS "uyeler_yetkili_yazma" ON uyeler;
 CREATE POLICY "uyeler_yetkili_yazma" ON uyeler FOR ALL TO authenticated USING (mevcut_kullanici_rolu() IN ('admin', 'editor'));
+DROP POLICY IF EXISTS "aidat_yetkili_okuma" ON aidat_kayitlari;
 CREATE POLICY "aidat_yetkili_okuma" ON aidat_kayitlari FOR SELECT TO authenticated USING (mevcut_kullanici_rolu() IN ('admin', 'editor'));
+DROP POLICY IF EXISTS "aidat_yetkili_yazma" ON aidat_kayitlari;
 CREATE POLICY "aidat_yetkili_yazma" ON aidat_kayitlari FOR ALL TO authenticated USING (mevcut_kullanici_rolu() IN ('admin', 'editor'));
 
+DROP POLICY IF EXISTS "medya_okuma" ON medya;
 CREATE POLICY "medya_okuma" ON medya FOR SELECT TO authenticated USING (TRUE);
+DROP POLICY IF EXISTS "medya_yazma" ON medya;
 CREATE POLICY "medya_yazma" ON medya FOR INSERT TO authenticated WITH CHECK (mevcut_kullanici_rolu() IN ('admin', 'editor'));
+DROP POLICY IF EXISTS "medya_silme" ON medya;
 CREATE POLICY "medya_silme" ON medya FOR DELETE TO authenticated USING (mevcut_kullanici_rolu() = 'admin');
+DROP POLICY IF EXISTS "surumler_goruntuleme" ON surumler;
 CREATE POLICY "surumler_goruntuleme" ON surumler FOR SELECT TO authenticated USING (mevcut_kullanici_rolu() IS NOT NULL);
+DROP POLICY IF EXISTS "islem_kayitlari_goruntuleme" ON islem_kayitlari;
 CREATE POLICY "islem_kayitlari_goruntuleme" ON islem_kayitlari FOR SELECT TO authenticated USING (mevcut_kullanici_rolu() = 'admin');
+DROP POLICY IF EXISTS "islem_kayitlari_ekleme" ON islem_kayitlari;
 CREATE POLICY "islem_kayitlari_ekleme" ON islem_kayitlari FOR INSERT TO authenticated WITH CHECK (TRUE);
 
 INSERT INTO ayarlar (anahtar, deger, aciklama, halka_acik, hassas) VALUES

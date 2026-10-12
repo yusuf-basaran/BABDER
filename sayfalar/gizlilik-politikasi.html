@@ -3,14 +3,106 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+
   <title>Gizlilik Politikası | BABDER</title>
-  <link rel="stylesheet" href="/css/style.css">
+  <meta name="description" content="BABDER Gizlilik ve Kişisel Veri Güvenliği Politikası.">
+  <meta name="robots" content="index, follow">
+  <meta name="theme-color" content="#1B7F3B">
+
+  <!-- Sekme Başlığı Simgesi (Title Icon / Favicon) -->
+  <link rel="icon" type="image/png" href="../img/logo.png">
+  <link rel="shortcut icon" type="image/png" href="../img/logo.png">
+  <link rel="apple-touch-icon" href="../img/logo.png">
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="Gizlilik Politikası | BABDER">
+  <meta property="og:description" content="BABDER Gizlilik ve Kişisel Veri Güvenliği Politikası.">
+  <meta property="og:image" content="../img/logo.png">
+
+  <link rel="stylesheet" href="../css/style.css">
 </head>
 <body>
-  <!-- UYARI: Bu metin taslaktır. Yayından önce hukuk danışmanı tarafından kontrol edilmelidir. -->
-  <main class="kapsayici" style="padding: 3rem 1rem; max-width: 800px;">
+  <a href="#ana-icerik" class="erisebilirlik-atla">Ana İçeriğe Geç</a>
+
+  <header class="site-header">
+    <div class="header-icerik">
+      <!-- SOL: LOGO VE DERNEK ADI -->
+      <a href="../index.html" class="marka-alani">
+        <img src="../img/logo.png" alt="BABDER Resmi Logosu" class="marka-logo" width="48" height="48">
+        <div>
+          <span class="marka-baslik">BABDER</span>
+          <span class="marka-alt-baslik">Kapıkaya Bab Köyü ve Köyleri Derneği</span>
+        </div>
+      </a>
+
+      <!-- SAĞ: MENÜ -->
+      <nav id="ana-navigasyon" class="ana-menu" aria-label="Ana Menü">
+        <ul id="menu-liste">
+          <li><a href="../index.html">Ana Sayfa</a></li>
+          <li><a href="./hakkimizda.html">Hakkımızda</a></li>
+          <li><a href="./koylerimiz.html">Köylerimiz</a></li>
+          <li><a href="./haberler.html">Haberler</a></li>
+          <li><a href="./etkinlikler.html">Etkinlikler</a></li>
+          <li><a href="./galeri.html">Galeri</a></li>
+          <li><a href="./bagis.html" class="btn btn-vurgu">Bağış</a></li>
+          <li><a href="./iletisim.html">İletişim</a></li>
+        </ul>
+      </nav>
+
+      <div class="header-aksiyonlar">
+        <button id="mobil-menu-tetikleyici" class="mobil-menu-btn" aria-label="Menüyü Aç/Kapat" aria-expanded="false">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M4 6h16M4 12h16M4 18h16"></path>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main id="ana-icerik" class="kapsayici bolum-bosluk-buyuk">
     <h1>Gizlilik Politikası</h1>
-    <p>BABDER olarak ziyaretçilerimizin ve üyelerimizin gizliliğine azami hassasiyet gösterilmektedir. Kişisel veriler üçüncü taraflarla paylaşılmaz veya ticari amaçla kullanılmaz.</p>
+    <div class="kart">
+      <p><em>Son Güncelleme: 01.01.2026</em></p>
+      
+      <h2>1. Genel İlkeler</h2>
+      <p>BABDER olarak ziyaretçilerimizin, üyelerimizin ve bağışçılarımızın gizliliğine azami hassasiyet gösterilmektedir. Kişisel veriler hiçbir surette ticari amaçla üçüncü taraflarla paylaşılmaz veya devredilmez.</p>
+
+      <h2>2. Veri Güvenliği</h2>
+      <p>Web sitemiz üzerinden toplanan veriler şifreli protokoller (HTTPS) aracılığıyla iletilir ve yüksek güvenlikli sunucularda muhafaza edilir.</p>
+    </div>
   </main>
+
+  <!-- KURUMSAL YEŞİL FOOTER -->
+  <footer class="site-footer">
+    <div class="kapsayici izgara-3">
+      <div>
+        <h3>BABDER</h3>
+        <p data-ayar="dernek_unvan">Şanlıurfa Siverek Kapıkaya Bab Köyü ve Köyleri Sosyal Yardımlaşma ve Dayanışma Derneği</p>
+        <p>Kütük No: <span data-ayar="kutuk_no">[KÜTÜK NO]</span></p>
+      </div>
+      <div>
+        <h3>İletişim</h3>
+        <p>Adres: <span data-ayar="adres">[DERNEK ADRESİ]</span></p>
+        <p>Telefon: <span data-ayar="telefon">[TELEFON NUMARASI]</span></p>
+        <p>E-Posta: <span data-ayar="eposta">[E-POSTA ADRESİ]</span></p>
+      </div>
+      <div>
+        <h3>Hukuki</h3>
+        <ul class="footer-link-liste">
+          <li><a href="./kvkk.html">KVKK Aydınlatma Metni</a></li>
+          <li><a href="./gizlilik-politikasi.html">Gizlilik Politikası</a></li>
+          <li><a href="./cerez-politikasi.html">Çerez Politikası</a></li>
+          <li><a href="./tuzuk-ve-belgeler.html">Dernek Tüzüğü</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-alt">
+      <p>&copy; 2026 BABDER. Tüm hakları saklıdır.</p>
+    </div>
+  </footer>
+
+  <script type="module" src="../js/main.js"></script>
 </body>
 </html>

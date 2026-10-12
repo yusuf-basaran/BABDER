@@ -7,6 +7,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
   if (!form) return;
 
+  const oncekiHata = sessionStorage.getItem("babder_login_error");
+  if (oncekiHata) {
+    hataKutusu.textContent = oncekiHata;
+    hataKutusu.classList.remove("gizli");
+    sessionStorage.removeItem("babder_login_error");
+  }
+
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
 

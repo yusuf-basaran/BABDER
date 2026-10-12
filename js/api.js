@@ -47,7 +47,14 @@ class SupabaseApi {
   async _request(path, options = {}) {
     const token = await this._validToken();
     const response = await fetch(`${this.url}${path}`, { ...options, headers: this._getHeaders(options.headers, token) });
-    if (!response.ok) throw new Error(`Supabase isteği başarısız (${response.status}).`);
+    if (!response.ok) {
+      let detail = "";
+      try {
+        const error = await response.json();
+        detail = error.message || error.error_description || error.details || error.hint || "";
+      } catch { /* Some gateway errors do not return JSON. */ }
+      throw new Error(detail || `Supabase isteği başarısız (${response.status}).`);
+    }
     return response;
   }
 
@@ -129,9 +136,11 @@ class SupabaseApi {
     return sonuc;
   }
 
-  signOut() {
+  signOut(reason = "") {
     const token = sessionStorage.getItem("babder_token");
     if (token) fetch(`${this.url}/auth/v1/logout`, { method: "POST", headers: { apikey: this.key, Authorization: `Bearer ${token}` }, keepalive: true }).catch(() => {});
+    if (reason) sessionStorage.setItem("babder_login_error", reason);
+    else sessionStorage.removeItem("babder_login_error");
     sessionStorage.removeItem("babder_token");
     sessionStorage.removeItem("babder_refresh_token");
     sessionStorage.removeItem("babder_expires_at");

@@ -26,8 +26,8 @@ async function paneliBaslat() {
     document.body.dataset.role = manager.rol;
     document.getElementById("yonetici-adi").textContent = manager.ad;
     erisimleriAyarla(manager.rol);
-  } catch {
-    db.signOut();
+  } catch (error) {
+    db.signOut(error.message || "Panel yetkisi doğrulanamadı. Supabase bağlantısını ve yönetici kaydınızı kontrol edin.");
     return;
   }
   modulYonlendir();

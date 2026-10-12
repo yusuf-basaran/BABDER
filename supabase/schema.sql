@@ -449,7 +449,7 @@ CREATE POLICY "surumler_goruntuleme" ON surumler FOR SELECT TO authenticated USI
 DROP POLICY IF EXISTS "islem_kayitlari_goruntuleme" ON islem_kayitlari;
 CREATE POLICY "islem_kayitlari_goruntuleme" ON islem_kayitlari FOR SELECT TO authenticated USING (mevcut_kullanici_rolu() = 'admin');
 DROP POLICY IF EXISTS "islem_kayitlari_ekleme" ON islem_kayitlari;
-CREATE POLICY "islem_kayitlari_ekleme" ON islem_kayitlari FOR INSERT TO authenticated WITH CHECK (TRUE);
+CREATE POLICY "islem_kayitlari_ekleme" ON islem_kayitlari FOR INSERT TO authenticated WITH CHECK (user_id = auth.uid());
 
 INSERT INTO ayarlar (anahtar, deger, aciklama, halka_acik, hassas) VALUES
 ('dernek_unvan', 'Şanlıurfa Siverek Kapıkaya Bab Köyü ve Köyleri Sosyal Yardımlaşma ve Dayanışma Derneği', 'Tüzükteki tam resmi ad', TRUE, FALSE),

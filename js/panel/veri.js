@@ -211,7 +211,12 @@ async function aidatlarGoster(root, editing = null) {
 
   const table = el("table", { class: "veri-tablosu" });
   const body = el("tbody");
-  table.append(el("thead", {}, [el("tr", {}, ["Üye", "Dönem", "Tutar", "Durum", "İşlem"].map(text => el("th", { text }))]), body);
+  table.append(
+    el("thead", {}, [
+      el("tr", {}, ["Üye", "Dönem", "Tutar", "Durum", "İşlem"].map(text => el("th", { text })))
+    ]),
+    body
+  );
   for (const row of rows || []) {
     const person = members?.find(m => m.id === row.uye_id);
     const actions = [

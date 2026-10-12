@@ -1,6 +1,7 @@
 import { db } from "../api.js";
 import { el, toastGoster } from "../utils.js";
 import { gorselAlaniniOlustur, gorseliYukle } from "./medya.js";
+import { alanYardimiEkle } from "./rehber.js";
 
 const DURUMLAR = ["taslak", "incelemede", "yayinda", "arsiv"];
 
@@ -64,7 +65,9 @@ async function haberFormuAc(kapsayici, haber = null) {
     const kontrol = tur === "textarea"
       ? el("textarea", { name: ad, class: "form-denetim", required: true, rows: 5, text: deger })
       : el("input", { name: ad, class: "form-denetim", value: deger, required: true, ...(ad === "ozet" ? { maxLength: 500 } : {}) });
-    return el("label", { style: "display:grid;gap:.35rem;margin:.75rem 0;", text: etiket }, [kontrol]);
+    const grup = el("div", { class: "panel-form-alani" }, [el("label", { class: "form-grup", text: etiket }, [kontrol])]);
+    alanYardimiEkle(kontrol, grup, "haberler", ad, etiket);
+    return grup;
   };
   const form = el("form", { class: "kart", style: "max-width:700px;margin:1rem 0;" }, [
     el("h3", { text: haber ? "Haberi Düzenle" : "Yeni Haber" }),
@@ -72,7 +75,7 @@ async function haberFormuAc(kapsayici, haber = null) {
     alan("Özet (en fazla 500 karakter)", "ozet", haber?.ozet || ""),
     alan("İçerik", "icerik", haber?.icerik || "", "textarea"),
     alan("Kategori", "kategori", haber?.kategori || "Genel"),
-    alan("Slug", "slug", haber?.slug || ""),
+    alan("URL kısa adı (slug)", "slug", haber?.slug || ""),
     el("label", { style: "display:grid;gap:.35rem;margin:.75rem 0;", text: "Kapak görseli" }, [kapakGorseli.root]),
     el("label", { style: "display:grid;gap:.35rem;margin:.75rem 0;", text: "Durum" }, [
       el("select", { name: "durum", class: "form-denetim" }, durumlar.map(d => el("option", { value: d, text: d, selected: (haber?.durum || "taslak") === d })))
@@ -83,6 +86,12 @@ async function haberFormuAc(kapsayici, haber = null) {
       el("button", { class: "btn btn-ikincil", type: "button", text: "Vazgeç", onclick: () => form.remove() })
     ])
   ]);
+  alanYardimiEkle(kapakGorseli.urlInput, kapakGorseli.root, "haberler", "kapak_gorseli", "Kapak görseli", "image");
+  kapakGorseli.fileInput.setAttribute("aria-describedby", kapakGorseli.urlInput.getAttribute("aria-describedby"));
+  const durum = form.querySelector('[name="durum"]');
+  const durumGrup = el("div", { class: "panel-form-alani" });
+  durum.parentElement.after(durumGrup);
+  alanYardimiEkle(durum, durumGrup, "haberler", "durum", "Durum");
   form.addEventListener("submit", async event => {
     event.preventDefault();
     const data = Object.fromEntries(new FormData(form).entries());

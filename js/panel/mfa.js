@@ -1,10 +1,15 @@
 import { db } from "../api.js";
 import { el } from "../utils.js";
+import { panelRehberiniGoster } from "./rehber.js";
 
 export async function mfaAkisiniGoster(root, onSuccess) {
   const user = await db.authUser();
   let factor = user.factors?.find(item => item.factor_type === "totp" && item.status === "verified");
   root.replaceChildren(el("h2", { text: "İki Adımlı Doğrulama" }));
+  const rehberAlani = el("div");
+  panelRehberiniGoster(rehberAlani, "mfa");
+  // Panelde üst rehber vardır; giriş ekranında da aynı açıklamayı göster.
+  if (!document.getElementById("panel-kullanim-rehberi")) root.appendChild(rehberAlani);
   if (!factor) {
     for (const unfinished of user.factors?.filter(item => item.factor_type === "totp" && item.status === "unverified") || []) await db.mfaUnenroll(unfinished.id);
     factor = await db.mfaEnroll();

@@ -1,5 +1,6 @@
 import { db } from "../api.js";
 import { el, toastGoster } from "../utils.js";
+import { alanYardimiEkle, panelRehberiniGoster } from "./rehber.js";
 
 export async function ayarlarModulunuYukle(kapsayici) {
   kapsayici.innerHTML = "";
@@ -49,6 +50,7 @@ export async function ayarlarModulunuYukle(kapsayici) {
 
 async function genelAyarlariGoster(hedef) {
   hedef.innerHTML = "";
+  panelRehberiniGoster(document.getElementById("panel-kullanim-rehberi"), "ayarlar_genel", true);
   const form = el("form", { class: "kart", style: "max-width: 750px;" });
 
   let ayarlar;
@@ -78,6 +80,7 @@ async function genelAyarlariGoster(hedef) {
       el("label", { for: a.id, text: a.etiket }),
       el("input", { type: a.type || "text", id: a.id, class: "form-denetim", value: a.deger })
     ]);
+    alanYardimiEkle(grup.querySelector("input"), grup, "ayarlar", a.id, a.etiket);
     form.appendChild(grup);
   });
 
@@ -87,6 +90,7 @@ async function genelAyarlariGoster(hedef) {
     checked: ayarHarita.editor_yayinlayabilir === "true"
   });
   form.appendChild(el("label", { class: "form-grup", style: "display:flex;align-items:center;gap:.65rem;margin-top:1rem;", text: "Editörler içeriği doğrudan yayımlayabilsin" }, [editorYayinInput]));
+  alanYardimiEkle(editorYayinInput, form, "ayarlar", "editor_yayinlayabilir", "Doğrudan yayın yetkisi");
   form.appendChild(el("p", { class: "form-yardim", text: "Kapalıyken editörlerin haber, duyuru, etkinlik ve sayfaları inceleme durumunda kaydedilir." }));
 
   const kaydetBtn = el("button", { type: "submit", class: "btn btn-ana", text: "Ayarları Güncelle", style: "margin-top: 1rem;" });
@@ -120,6 +124,7 @@ async function genelAyarlariGoster(hedef) {
 
 async function hukukiMetinleriGoster(hedef) {
   hedef.innerHTML = "";
+  panelRehberiniGoster(document.getElementById("panel-kullanim-rehberi"), "ayarlar_hukuki", true);
   const kapsayici = el("div", { class: "kart", style: "max-width: 800px;" });
 
   kapsayici.appendChild(el("h3", { text: "Yasal Aydınlatma ve Politikalar" }));
@@ -144,13 +149,16 @@ async function hukukiMetinleriGoster(hedef) {
 
     const textarea = el("textarea", { class: "form-denetim", rows: 6, style: "margin: 0.5rem 0;" });
     textarea.value = m.icerik;
+    textarea.setAttribute("aria-label", `${m.baslik} metni`);
     blok.appendChild(textarea);
+    alanYardimiEkle(textarea, blok, "hukuki", "icerik", "Metin");
 
     const onayKutusuGrup = el("div", { style: "display: flex; gap: 0.5rem; align-items: center; margin-bottom: 0.5rem;" });
     const chk = el("input", { type: "checkbox", id: `chk-${m.id}`, checked: m.hukuk_onay });
     const lbl = el("label", { for: `chk-${m.id}`, text: "Dernek Hukuk Müşaviri / Avukat Onayından Geçti", style: "font-size: 0.85rem;" });
     onayKutusuGrup.append(chk, lbl);
     blok.appendChild(onayKutusuGrup);
+    alanYardimiEkle(chk, blok, "hukuki", "hukuk_onay", "Hukuk onayı");
 
     const btnGuncelle = el("button", {
       class: "btn btn-ana",
@@ -183,6 +191,7 @@ async function hukukiMetinleriGoster(hedef) {
 
 async function bakimAyarlariniGoster(hedef) {
   hedef.innerHTML = "";
+  panelRehberiniGoster(document.getElementById("panel-kullanim-rehberi"), "ayarlar_bakim", true);
   const kart = el("div", { class: "kart", style: "max-width: 600px;" });
 
   kart.appendChild(el("h3", { text: "Bakım Modu Yönetimi" }));
@@ -208,12 +217,14 @@ async function bakimAyarlariniGoster(hedef) {
   const bakimEtiket = el("label", { for: "bakim-durum", text: "Site Bakım Modunda (Yayını Durdur)" });
   secimGrup.append(bakimAnahtar, bakimEtiket);
   kart.appendChild(secimGrup);
+  alanYardimiEkle(bakimAnahtar, kart, "ayarlar", "bakim_modu", "Bakım modu");
 
   const mesajGrup = el("div", { class: "form-grup" }, [
     el("label", { for: "bakim-metni", text: "Kullanıcıya Gösterilecek Bakım Mesajı" }),
     el("textarea", { id: "bakim-metni", class: "form-denetim", rows: 3, value: mesaj })
   ]);
   kart.appendChild(mesajGrup);
+  alanYardimiEkle(mesajGrup.querySelector("textarea"), mesajGrup, "ayarlar", "bakim_mesaji", "Bakım mesajı");
 
   const kaydetBtn = el("button", {
     class: "btn btn-ana",

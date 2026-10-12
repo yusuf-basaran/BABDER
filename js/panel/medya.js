@@ -2,8 +2,8 @@ import { db } from "../api.js";
 import { el } from "../utils.js";
 
 export function gorselAlaniniOlustur(url = "", required = false) {
-  const urlInput = el("input", { type: "url", class: "form-denetim", value: url || "", required, placeholder: "https://… (isteğe bağlı)" });
-  const fileInput = el("input", { type: "file", class: "form-denetim", accept: "image/jpeg,image/png,image/webp" });
+  const urlInput = el("input", { type: "url", class: "form-denetim", value: url || "", required, "aria-label": "Görsel bağlantısı (isteğe bağlı)", placeholder: "https://… (isteğe bağlı)" });
+  const fileInput = el("input", { type: "file", class: "form-denetim", "aria-label": "Cihazdan görsel seç", accept: "image/jpeg,image/png,image/webp" });
   const preview = el("img", { alt: "Görsel önizlemesi", style: "display:none;max-width:220px;max-height:140px;object-fit:cover;margin-top:.5rem;border-radius:8px;" });
   const root = el("div", {}, [urlInput, el("small", { class: "soluk-metin", text: "İsterseniz URL girin veya cihazınızdan görsel seçin. Seçtiğiniz dosya yüklenince URL otomatik doldurulur." }), fileInput, preview]);
   let objectUrl = null;

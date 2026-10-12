@@ -62,7 +62,9 @@ async function genelAyarlariGoster(hedef) {
   const alanlar = [
     { id: "dernek_unvan", etiket: "Resmi Dernek Unvanı", deger: ayarHarita.dernek_unvan || "" },
     { id: "kisa_ad", etiket: "Kısa Ad", deger: ayarHarita.kisa_ad || "BABDER" },
-    { id: "facebook_url", etiket: "Facebook Sayfası URL", deger: ayarHarita.facebook_url || "" },
+    { id: "facebook_url", etiket: "Facebook Sayfası URL", deger: ayarHarita.facebook_url || "", type: "url" },
+    { id: "whatsapp_topluluk_url", etiket: "WhatsApp Topluluğu URL", deger: ayarHarita.whatsapp_topluluk_url || "", type: "url" },
+    { id: "instagram_url", etiket: "Instagram Sayfası URL", deger: ayarHarita.instagram_url || "", type: "url" },
     { id: "telefon", etiket: "İletişim Telefonu", deger: ayarHarita.telefon || "" },
     { id: "eposta", etiket: "Resmi E-Posta", deger: ayarHarita.eposta || "" },
     { id: "adres", etiket: "Açık Merkez Adresi", deger: ayarHarita.adres || "" },
@@ -74,7 +76,7 @@ async function genelAyarlariGoster(hedef) {
   alanlar.forEach(a => {
     const grup = el("div", { class: "form-grup" }, [
       el("label", { for: a.id, text: a.etiket }),
-      el("input", { type: "text", id: a.id, class: "form-denetim", value: a.deger })
+      el("input", { type: a.type || "text", id: a.id, class: "form-denetim", value: a.deger })
     ]);
     form.appendChild(grup);
   });
@@ -94,10 +96,16 @@ async function genelAyarlariGoster(hedef) {
     e.preventDefault();
     kaydetBtn.disabled = true;
     try {
-      for (const a of alanlar) {
-        const yeniDeger = document.getElementById(a.id).value.trim();
-        await db.update("ayarlar", a.id, { deger: yeniDeger });
+      const degerler = alanlar.map(a => ({ ...a, yeniDeger: document.getElementById(a.id).value.trim() }));
+      for (const a of degerler) {
+        const yeniDeger = a.yeniDeger;
+        if (a.type === "url" && yeniDeger) {
+          let url;
+          try { url = new URL(yeniDeger); } catch { throw new Error(`${a.etiket} geçerli bir URL olmalı.`); }
+          if (url.protocol !== "https:") throw new Error(`${a.etiket} yalnızca HTTPS bağlantısı olabilir.`);
+        }
       }
+      for (const a of degerler) await db.update("ayarlar", a.id, { deger: a.yeniDeger });
       await db.update("ayarlar", "editor_yayinlayabilir", { deger: String(editorYayinInput.checked) });
       toastGoster("Genel ayarlar başarıyla kaydedildi.", "basari");
     } catch {

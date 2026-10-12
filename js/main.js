@@ -1,6 +1,7 @@
 import { db } from "./api.js";
 import { el, guvenliMetinAyristir } from "./utils.js";
 import { temaYonetiminiBaslat } from "./tema.js";
+import { ekIcerikleriYukle, sosyalBaglantilariGuncelle, takvimIndir, ayTakviminiHazirla } from "./ozellikler.js";
 
 // DOM hazır olduğunda ilk olarak arayüz etkileşimlerini (menü & tema) anında bağla
 document.addEventListener("DOMContentLoaded", () => {
@@ -13,6 +14,7 @@ document.addEventListener("DOMContentLoaded", () => {
   ayarlarıVeBakimiDenetle();
   menuyuYukle();
   publicIcerikleriYukle();
+  ekIcerikleriYukle();
   googleSchemaOlustur();
 });
 
@@ -79,7 +81,7 @@ function icerikYok(kapsayici, mesaj) {
 function tarihMetni(value, options = {}) {
   if (!value) return "";
   const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? "" : date.toLocaleDateString("tr-TR", options);
+  return Number.isNaN(date.getTime()) ? "" : options.timeStyle ? date.toLocaleString("tr-TR", options) : date.toLocaleDateString("tr-TR", options);
 }
 
 function guvenliUrl(value) {
@@ -165,15 +167,24 @@ async function etkinlikleriYukle() {
   if (!rows) { hedefler.forEach(el => icerikYok(el, "Etkinlikler şu anda yüklenemiyor.")); return; }
   const now = Date.now();
   const current = rows.filter(row => !row.baslangic_tarihi || new Date(row.baslangic_tarihi).getTime() >= now);
+  ayTakviminiHazirla(rows);
+  const documents = page ? await publicKayitlariGetir("belgeler", "durum=eq.yayinda&deleted_at=is.null") : [];
   for (const hedef of hedefler) {
     const liste = hedef === home ? current.slice(0, 3) : current;
     if (!liste.length) { icerikYok(hedef, "Şu anda yaklaşan etkinlik bulunmuyor."); continue; }
-    hedef.replaceChildren(...liste.map(row => icerikKarti({
+    hedef.replaceChildren(...liste.map(row => {
+      const card = icerikKarti({
       title: row.baslik,
-      text: row.aciklama,
+      text: [row.aciklama, row.gundem ? `Gündem:\n${row.gundem}` : ""].filter(Boolean).join("\n\n"),
       image: row.gorsel_url,
-      meta: [tarihMetni(row.baslangic_tarihi, { dateStyle: "medium", timeStyle: "short" }), row.konum].filter(Boolean).join(" · ")
-    })));
+      meta: [({ etkinlik: "Etkinlik", genel_kurul: "Genel kurul", toplanti: "Toplantı" })[row.tur], tarihMetni(row.baslangic_tarihi, { dateStyle: "medium", timeStyle: "short" }), row.konum].filter(Boolean).join(" · ")
+      });
+      card.appendChild(el("button", { type: "button", class: "btn btn-ikincil", text: "Takvime indir (.ics)", onclick: () => takvimIndir(row) }));
+      const doc = documents?.find(item => item.id === row.tutanak_belge_id);
+      const documentUrl = guvenliUrl(doc?.dosya_url);
+      if (documentUrl) card.appendChild(el("a", { href: documentUrl, class: "btn btn-ikincil", text: "Tutanak PDF", target: "_blank", rel: "noopener noreferrer" }));
+      return card;
+    }));
   }
 }
 
@@ -233,7 +244,14 @@ async function koyleriYukle() {
   const rows = await publicKayitlariGetir("koyler", "deleted_at=is.null&order=sira.asc,ad.asc");
   if (!rows) { icerikYok(root, "Köy bilgileri şu anda yüklenemiyor."); return; }
   if (!rows.length) { icerikYok(root, "Köy tanıtımları henüz yayımlanmamış."); return; }
-  root.replaceChildren(...rows.map(row => icerikKarti({ title: row.ad, text: [row.kisa_tanitim, row.detay_bilgi].filter(Boolean).join("\n\n"), image: row.kapak_gorseli })));
+  root.replaceChildren(...rows.map(row => {
+    const card = icerikKarti({ title: row.ad, text: [row.kisa_tanitim, row.detay_bilgi].filter(Boolean).join("\n\n"), image: row.kapak_gorseli });
+    if (row.enlem !== null && row.enlem !== undefined && row.boylam !== null && row.boylam !== undefined) {
+      const lat = Number(row.enlem), lon = Number(row.boylam);
+      if (Number.isFinite(lat) && Number.isFinite(lon) && Math.abs(lat) <= 90 && Math.abs(lon) <= 180) card.appendChild(el("a", { href: `https://www.openstreetmap.org/?mlat=${lat}&mlon=${lon}#map=14/${lat}/${lon}`, class: "btn btn-ikincil", text: "Haritada aç", target: "_blank", rel: "noopener noreferrer" }));
+    }
+    return card;
+  }));
 }
 
 async function kuruluYukle() {
@@ -358,6 +376,7 @@ async function ayarlarıVeBakimiDenetle() {
         }
       }
     });
+    sosyalBaglantilariGuncelle(ayarHaritasi);
   } catch (err) {
     console.warn("Ayarlar yüklenirken hata oluştu:", err);
   } finally {
@@ -390,7 +409,7 @@ async function menuyuYukle() {
     ["Ana Sayfa", "/"], ["Hakkımızda", "/sayfalar/hakkimizda.html"], ["Köylerimiz", "/sayfalar/koylerimiz.html"],
     ["Yönetim Kurulu", "/sayfalar/yonetim-kurulu.html"], ["Haberler", "/sayfalar/haberler.html"], ["Etkinlikler", "/sayfalar/etkinlikler.html"],
     ["Galeri", "/sayfalar/galeri.html"], ["Tüzük ve Belgeler", "/sayfalar/tuzuk-ve-belgeler.html"], ["Üyelik", "/sayfalar/uyelik-basvurusu.html"],
-    ["Bağış", "/sayfalar/bagis.html"], ["İletişim", "/sayfalar/iletisim.html"]
+    ["Bağış", "/sayfalar/bagis.html"], ["İletişim", "/sayfalar/iletisim.html"], ["Taziyeler", "/sayfalar/taziyeler.html"], ["SSS", "/sayfalar/sss.html"], ["Nasıl Üye Olurum?", "/sayfalar/nasil-uye-olurum.html"]
   ];
   let configured = [];
   try { configured = await db.select("menu_ogeleri", "aktif=eq.true&konum=eq.header&order=sira.asc"); }
@@ -407,14 +426,17 @@ async function menuyuYukle() {
     if (!paths.has(menuAnahtari(href))) items.push({ label, href });
   }
   const currentPath = menuYolu(location.pathname);
-  menuListe.replaceChildren(...items.map(item => {
+  const menuOgesi = item => {
     const linkPath = menuYolu(item.href);
     const anchor = el("a", { href: item.href, text: item.label });
     if (linkPath && linkPath === currentPath) anchor.setAttribute("aria-current", "page");
     const listItem = el("li", {}, [anchor]);
     if (item.label === "Bağış") anchor.classList.add("btn", "btn-vurgu");
     return listItem;
-  }));
+  };
+  const visible = items.slice(0, 7).map(menuOgesi);
+  if (items.length > 7) visible.push(el("li", { class: "menu-ek" }, [el("details", {}, [el("summary", { text: "Diğer Sayfalar" }), el("ul", { class: "menu-ek-liste" }, items.slice(7).map(menuOgesi))])]));
+  menuListe.replaceChildren(...visible);
 }
 
 function googleSchemaOlustur() {

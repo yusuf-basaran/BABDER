@@ -3,16 +3,19 @@ import { el, toastGoster } from "../utils.js";
 import { gorselAlaniniOlustur, gorseliYukle, gorseliWebpSikistir } from "./medya.js";
 
 const METIN = (name, label, options = {}) => ({ name, label, type: "text", ...options });
-const AREA = (name, label) => ({ name, label, type: "textarea" });
+const AREA = (name, label, options = {}) => ({ name, label, type: "textarea", ...options });
 const SELECT = (name, label, options) => ({ name, label, type: "select", options });
 const BOOL = (name, label) => ({ name, label, type: "checkbox" });
 const GORSEL = (name, label, options = {}) => ({ name, label, type: "image", ...options });
+const BELGE = (name, label, options = {}) => ({ name, label, type: "document", ...options });
 const DURUM = ["taslak", "incelemede", "yayinda", "arsiv"].map(x => [x, x]);
 
 const MODULLER = {
   duyurular: { title: "Duyurular", table: "duyurular", columns: ["baslik", "durum", "yayin_tarihi", "bitis_tarihi"], fields: [METIN("baslik", "Başlık"), AREA("icerik", "İçerik"), BOOL("sabit", "Üste sabitle"), BOOL("bantta_goster", "Duyuru bandında göster"), METIN("bitis_tarihi", "Bitiş tarihi", { type: "datetime-local", nullable: true }), SELECT("durum", "Durum", DURUM)], softDelete: true },
-  etkinlikler: { title: "Etkinlikler", table: "etkinlikler", columns: ["baslik", "konum", "baslangic_tarihi", "durum"], fields: [METIN("baslik", "Etkinlik adı"), AREA("aciklama", "Açıklama"), METIN("baslangic_tarihi", "Başlangıç", { type: "datetime-local" }), METIN("bitis_tarihi", "Bitiş", { type: "datetime-local", nullable: true }), METIN("konum", "Konum"), GORSEL("gorsel_url", "Görsel", { nullable: true }), SELECT("durum", "Durum", DURUM)], softDelete: true },
-  koyler: { title: "Köyler", table: "koyler", columns: ["ad", "sira"], fields: [METIN("ad", "Köy adı"), AREA("kisa_tanitim", "Kısa tanıtım"), AREA("detay_bilgi", "Detaylı bilgi"), GORSEL("kapak_gorseli", "Kapak görseli", { nullable: true }), METIN("sira", "Sıra", { type: "number" })], softDelete: true },
+  etkinlikler: { title: "Etkinlikler", table: "etkinlikler", columns: ["baslik", "tur", "konum", "baslangic_tarihi", "durum"], fields: [METIN("baslik", "Etkinlik adı"), SELECT("tur", "Tür", [["etkinlik", "Etkinlik"], ["genel_kurul", "Genel kurul"], ["toplanti", "Toplantı"]]), AREA("aciklama", "Açıklama"), AREA("gundem", "Gündem", { nullable: true }), METIN("baslangic_tarihi", "Başlangıç", { type: "datetime-local" }), METIN("bitis_tarihi", "Bitiş", { type: "datetime-local", nullable: true }), METIN("konum", "Konum"), BELGE("tutanak_belge_id", "Tutanak PDF belgesi", { nullable: true }), GORSEL("gorsel_url", "Görsel", { nullable: true }), SELECT("durum", "Durum", DURUM)], softDelete: true },
+  taziyeler: { title: "Vefat / Taziye Duyuruları", table: "taziyeler", columns: ["ad_soyad", "koy", "cenaze_tarihi", "durum"], fields: [METIN("ad_soyad", "Vefat eden kişinin adı"), METIN("koy", "Köy"), AREA("aciklama", "Açıklama", { nullable: true }), METIN("cenaze_yeri", "Cenaze yeri"), METIN("cenaze_tarihi", "Cenaze tarihi ve saati", { type: "datetime-local" }), METIN("yayin_tarihi", "Yayın başlangıcı", { type: "datetime-local" }), METIN("bitis_tarihi", "Yayından kalkma tarihi", { type: "datetime-local", nullable: true }), BOOL("aile_izni", "Aileden yayın izni alındı"), SELECT("durum", "Durum", DURUM)], softDelete: true },
+  kampanyalar: { title: "Bağış Kampanyaları", table: "kampanyalar", columns: ["baslik", "hedef_tutar", "toplanan_tutar", "bitis_tarihi", "durum"], fields: [METIN("baslik", "Kampanya başlığı"), AREA("aciklama", "Açıklama"), METIN("hedef_tutar", "Hedef tutar", { type: "number", min: 0.01, step: 0.01 }), METIN("toplanan_tutar", "Toplanan tutar", { type: "number", min: 0, step: 0.01 }), METIN("bitis_tarihi", "Bitiş tarihi", { type: "datetime-local", nullable: true }), GORSEL("gorsel_url", "Görsel", { nullable: true }), SELECT("durum", "Durum", DURUM)], softDelete: true },
+  koyler: { title: "Köyler", table: "koyler", columns: ["ad", "enlem", "boylam", "sira"], fields: [METIN("ad", "Köy adı"), AREA("kisa_tanitim", "Kısa tanıtım"), AREA("detay_bilgi", "Detaylı bilgi"), GORSEL("kapak_gorseli", "Kapak görseli", { nullable: true }), METIN("enlem", "Enlem", { type: "number", min: -90, max: 90, step: 0.000001, nullable: true }), METIN("boylam", "Boylam", { type: "number", min: -180, max: 180, step: 0.000001, nullable: true }), METIN("sira", "Sıra", { type: "number" })], softDelete: true },
   galeri: { title: "Galeri", table: "galeri", columns: ["alt_metin", "gorsel_url", "sira"], fields: [GORSEL("gorsel_url", "Görsel"), METIN("alt_metin", "Alternatif metin"), METIN("album_id", "Albüm", { type: "album", nullable: true }), METIN("sira", "Sıra", { type: "number" })], softDelete: true },
   mesajlar: { title: "İletişim Mesajları", table: "iletisim_mesajlari", columns: ["ad_soyad", "eposta", "konu", "mesaj", "okundu", "created_at"], fields: [], softDelete: false, messages: true },
   uyeler: { title: "Üyeler", table: "uyeler", columns: ["uye_no", "ad_soyad", "telefon", "eposta", "koy_bagi", "durum"], fields: [METIN("uye_no", "Üye numarası"), METIN("ad_soyad", "Ad soyad"), METIN("telefon", "Telefon"), METIN("eposta", "E-posta", { nullable: true }), METIN("koy_bagi", "Köy bağı"), SELECT("durum", "Durum", [["aktif", "Aktif"], ["pasif", "Pasif"], ["ayrildi", "Ayrıldı"]]), METIN("giris_tarihi", "Üyelik başlangıcı", { type: "date" })], softDelete: true },
@@ -82,7 +85,7 @@ export async function veriModulunuYukle(root, key) {
 async function kayitFormu(root, cfg, row = null) {
   const form = el("form", { class: "kart", style: "max-width:760px;margin:1rem 0;" });
   form.appendChild(el("h3", { text: row ? "Kaydı düzenle" : "Yeni kayıt" }));
-  const yayinDurumTablolari = new Set(["sayfalar", "haberler", "duyurular", "etkinlikler"]);
+  const yayinDurumTablolari = new Set(["sayfalar", "haberler", "duyurular", "etkinlikler", "taziyeler"]);
   let editorYayinlayabilir = window.BABDER_ROLE === "admin";
   if (window.BABDER_ROLE === "editor" && yayinDurumTablolari.has(cfg.table)) {
     editorYayinlayabilir = await db.select("ayarlar", "anahtar=eq.editor_yayinlayabilir&select=deger&limit=1")
@@ -92,6 +95,7 @@ async function kayitFormu(root, cfg, row = null) {
   const imageFields = {};
   let albums = [];
   let pages = [];
+  let documents = [];
   if (cfg.fields.some(field => field.type === "album")) {
     try { albums = await db.select("albumler", "deleted_at=is.null&order=baslik.asc"); }
     catch { toastGoster("Albüm listesi alınamadı.", "hata"); return; }
@@ -99,6 +103,10 @@ async function kayitFormu(root, cfg, row = null) {
   if (cfg.fields.some(field => field.type === "page")) {
     try { pages = await db.select("sayfalar", "deleted_at=is.null&order=baslik.asc"); }
     catch { toastGoster("Sayfa listesi alınamadı.", "hata"); return; }
+  }
+  if (cfg.fields.some(field => field.type === "document")) {
+    try { documents = await db.select("belgeler", "order=baslik.asc"); }
+    catch { toastGoster("Belge listesi alınamadı.", "hata"); return; }
   }
   for (const field of cfg.fields) {
     const attrs = { name: field.name, class: "form-denetim", required: !field.nullable };
@@ -112,6 +120,7 @@ async function kayitFormu(root, cfg, row = null) {
     }
     else if (field.type === "album") controls[field.name] = el("select", attrs, [el("option", { value: "", text: "Albüm seçmeden ekle", selected: !row?.album_id }), ...albums.map(album => el("option", { value: album.id, text: album.baslik, selected: row?.album_id === album.id }))]);
     else if (field.type === "page") controls[field.name] = el("select", attrs, [el("option", { value: "", text: "Sayfa seçin" }), ...pages.map(page => el("option", { value: page.id, text: `${page.baslik} (${page.slug})`, selected: row?.sayfa_id === page.id }))]);
+    else if (field.type === "document") controls[field.name] = el("select", attrs, [el("option", { value: "", text: "Tutanak belgesi seçin", selected: !row?.[field.name] }), ...documents.map(doc => el("option", { value: doc.id, text: `${doc.baslik} (${doc.kategori})`, selected: row?.[field.name] === doc.id }))]);
     else if (field.type === "image") {
       imageFields[field.name] = gorselAlaniniOlustur(row?.[field.name] || "", false);
       controls[field.name] = imageFields[field.name].urlInput;
@@ -120,7 +129,11 @@ async function kayitFormu(root, cfg, row = null) {
       const inputAttrs = { ...attrs, type: field.type };
       if (field.type === "checkbox") inputAttrs.checked = Boolean(row?.[field.name]);
       else inputAttrs.value = formatValue(row?.[field.name], field.type);
-      if (field.type === "number") inputAttrs.min = 0;
+      if (field.type === "number") {
+        inputAttrs.min = field.min ?? 0;
+        if (field.max !== undefined) inputAttrs.max = field.max;
+        if (field.step !== undefined) inputAttrs.step = field.step;
+      }
       controls[field.name] = el("input", inputAttrs);
     }
     form.appendChild(el("label", { class: "form-grup", style: "display:block;margin:.6rem 0;", text: field.label }, [field.type === "image" ? imageFields[field.name].root : controls[field.name]]));
@@ -148,6 +161,9 @@ async function kayitFormu(root, cfg, row = null) {
         if (field.type === "number" && value !== "") value = Number(value);
         data[field.name] = value;
       }
+      if (cfg.table === "taziyeler" && data.durum === "yayinda" && data.aile_izni !== true) {
+        throw new Error("Taziye duyurusunu yayımlamak için aile izni onay kutusunu işaretleyin.");
+      }
       if (cfg.table === "yoneticiler" && row) {
         const currentUser = JSON.parse(sessionStorage.getItem("babder_user") || "{}");
         if (row.user_id === currentUser.id && (data.rol !== row.rol || data.aktif !== row.aktif)) throw new Error("Kendi admin rolünüzü bu ekrandan değiştiremezsiniz.");
@@ -169,7 +185,7 @@ async function kayitFormu(root, cfg, row = null) {
 }
 
 function formatValue(value, type) {
-  if (!value) return "";
+  if (value === null || value === undefined || value === "") return "";
   if (type === "datetime-local") {
     const date = new Date(value);
     date.setMinutes(date.getMinutes() - date.getTimezoneOffset());

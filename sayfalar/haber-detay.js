@@ -60,4 +60,10 @@ document.addEventListener("DOMContentLoaded", async () => {
   const govdeKapsayici = el("div", { class: "haber-govde-metin", style: "line-height: 1.8;" });
   govdeKapsayici.appendChild(guvenliMetinAyristir(haber.icerik));
   kapsayici.appendChild(govdeKapsayici);
+  const shareUrl = `${window.location.origin}/haber/${encodeURIComponent(haber.slug)}`;
+  kapsayici.appendChild(el("p", {}, [
+    el("a", { href: `https://wa.me/?text=${encodeURIComponent(`${haber.baslik} ${shareUrl}`)}`, text: "WhatsApp'ta paylaş", target: "_blank", rel: "noopener noreferrer" }),
+    " · ",
+    el("a", { href: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`, text: "Facebook'ta paylaş", target: "_blank", rel: "noopener noreferrer" })
+  ]));
 });

@@ -448,3 +448,16 @@ body {
 #haber-daha-fazla { display: block; margin: var(--bosluk-l) auto 0; }
 #haber-daha-fazla[hidden] { display: none; }
 @media (max-width: 640px) { .haber-filtreleri { grid-template-columns: 1fr; } }
+
+.sosyal-linkler a { display:inline-flex;align-items:center;gap:.5rem; }
+.sosyal-linkler a[hidden] { display:none; }
+.sosyal-simge { display:inline-grid;place-items:center;width:1.5rem;height:1.5rem;border-radius:50%;background:var(--renk-ana);color:#fff;font-size:.8rem; }
+progress { width:100%;height:1.2rem;accent-color:var(--renk-ana); }
+.ay-takvimi { display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:.25rem;overflow-x:auto; }
+.takvim-gun { min-height:6rem;padding:.4rem;border:1px solid var(--renk-sinir);border-radius:.3rem; }
+.takvim-gun-baslik { text-align:center;font-weight:700; }
+.takvim-etkinlik { display:block;width:100%;border:0;background:var(--renk-ana);color:#fff;border-radius:.3rem;font-size:.75rem;margin:.3rem 0;padding:.35rem;cursor:pointer;overflow-wrap:anywhere; }
+.takvim-kontroller { display:flex;align-items:center;justify-content:space-between;gap:.5rem;flex-wrap:wrap;margin:1rem 0; }
+@media(max-width:600px){.ay-takvimi{min-width:550px;}#etkinlik-ay-gorunumu{overflow-x:auto;}}
+
+.menu-ek{position:relative}.menu-ek summary{cursor:pointer;padding:.5rem;font-weight:600}.ana-menu .menu-ek-liste{position:absolute;right:0;min-width:230px;display:flex;flex-direction:column;align-items:stretch;background:var(--renk-yuzey);padding:.6rem;border:1px solid var(--renk-sinir);box-shadow:var(--golge);z-index:1000}.menu-ek-liste a{display:block}.menu-ek details:not([open]) .menu-ek-liste{display:none}@media(max-width:1200px){.ana-menu .menu-ek-liste{position:static;box-shadow:none;border:0;min-width:0}}

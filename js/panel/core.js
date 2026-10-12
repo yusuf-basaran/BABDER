@@ -94,7 +94,7 @@ function modulYonlendir() {
   } else if (hash === "guvenlik") {
     baslik.textContent = "Güvenlik & Denetim";
     guvenlikModulunuYukle(modulAlani);
-  } else if (["duyurular", "etkinlikler", "galeri", "albumler", "koyler", "mesajlar", "uyeler", "medya", "sayfalar", "sayfa_bolumleri", "anasayfa", "menu", "kurul", "belgeler", "hukuki", "surumler", "yoneticiler"].includes(hash)) {
+  } else if (["duyurular", "etkinlikler", "taziyeler", "kampanyalar", "galeri", "albumler", "koyler", "mesajlar", "uyeler", "medya", "sayfalar", "sayfa_bolumleri", "anasayfa", "menu", "kurul", "belgeler", "hukuki", "surumler", "yoneticiler"].includes(hash)) {
     baslik.textContent = document.querySelector(`[data-modul="${hash}"]`)?.textContent.trim() || "Yönetim";
     veriModulunuYukle(modulAlani, hash);
   } else {

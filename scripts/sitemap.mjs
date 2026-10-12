@@ -14,6 +14,9 @@ const YAYIN_SAYFALARI = [
   ["/sayfalar/uyelik-basvurusu", "monthly", "0.8"],
   ["/sayfalar/bagis", "monthly", "0.7"],
   ["/sayfalar/iletisim", "monthly", "0.8"],
+  ["/sayfalar/taziyeler", "daily", "0.7"],
+  ["/sayfalar/sss", "monthly", "0.7"],
+  ["/sayfalar/nasil-uye-olurum", "monthly", "0.7"],
   ["/sayfalar/kvkk", "yearly", "0.5"],
   ["/sayfalar/gizlilik-politikasi", "yearly", "0.5"],
   ["/sayfalar/cerez-politikasi", "yearly", "0.5"]

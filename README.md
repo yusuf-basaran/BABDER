@@ -32,3 +32,7 @@ Editör yayın yetkisi kuralını mevcut veritabanına uygulamak için güncel `
 Panel; haber, duyuru, etkinlik, sayfa ve sayfa bölümleri, ana sayfa içeriği, menü, köy, yönetim kurulu, albüm, galeri, belge, hukuki metin, başvuru, mesaj, üye, aidat ve medya yönetimini içerir. İşlemler kullanıcı rolü ve Supabase RLS politikalarıyla sınırlandırılır. Hukuki metinlerin gerçek yayın öncesi hukuki uzman tarafından incelenmesi gerekir.
 
 Genel formlarda istemci tarafı honeypot ve alan kontrolleri bulunur. İnternet botlarına karşı güçlü IP tabanlı hız sınırı gerekiyorsa, formları Supabase Edge Function veya benzeri bir sunucu uç noktasının arkasına almak ve orada rate limit yapılandırmak gerekir; tarayıcı tarafı tek başına güvenilir hız sınırlaması sağlayamaz.
+
+### Yeni içerik modülleri
+
+Güncel `supabase/schema.sql` uygulanınca taziye ve kampanya tabloları, toplantı türleri, tutanak belge ilişkisi ve köy koordinatları kullanılabilir. Taziye yayımlamak için aile izni gerekir. Faaliyet raporlarını Belgeler modülünde `faaliyet_raporu` kategorisiyle ekleyin. SSS ve Nasıl Üye Olurum sayfaları için Sayfalar modülünde `sss` ve `nasil-uye-olurum` slug değerleriyle kayıt oluşturup Sayfa Bölümleri alanında içeriğini girin. Sosyal adresleri Site Ayarları ekranından HTTPS bağlantısı olarak kaydedin. Harita gömmesi yerine OpenStreetMap bağlantısı kullanıldığı için dış harita kaynağı CSP içine eklenmez.

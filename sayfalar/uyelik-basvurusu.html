@@ -7,11 +7,8 @@
   <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
-  <header class="site-header">
-    <div class="header-icerik">
-      <a href="/" class="marka-alani"><span class="marka-baslik">BABDER</span></a>
-    </div>
-  </header>
+  <a href="#ana-icerik" class="erisebilirlik-atla">Ana içeriğe geç</a>
+  <!-- PARTIAL:header -->
 
   <main class="kapsayici" style="padding: 3rem 1rem; max-width: 700px;">
     <h1>Üyelik Başvuru Formu</h1>
@@ -56,40 +53,14 @@
       </div>
 
       <button type="submit" class="btn btn-ana" style="margin-top: 1rem;">Başvuruyu Gönder</button>
-      <div id="form-sonuc" style="margin-top: 1rem;" role="alert"></div>
+      <div id="form-sonuc" style="margin-top: 1rem;" role="status" aria-live="polite"></div>
     </form>
   </main>
 
-  <script type="module">
-    import { db } from "/js/api.js";
+  <!-- PARTIAL:footer -->
+  <!-- PARTIAL:cookie -->
 
-    document.getElementById("uyelik-formu")?.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const sonucAlani = document.getElementById("form-sonuc");
-      
-      if (document.getElementById("websitesi_referans").value) {
-        sonucAlani.textContent = "Hatalı işlem tespit edildi.";
-        return;
-      }
-
-      const veri = {
-        ad_soyad: document.getElementById("ad_soyad").value.trim(),
-        telefon: document.getElementById("telefon").value.trim(),
-        eposta: document.getElementById("eposta").value.trim(),
-        koy_bagi: document.getElementById("koy_bagi").value.trim(),
-        mesaj: document.getElementById("mesaj").value.trim(),
-        kvkk_onay: document.getElementById("kvkk_onay").checked
-      };
-      veri.eposta = veri.eposta.toLocaleLowerCase("en-US");
-
-      try {
-        await db.insert("uyelik_basvurulari", veri);
-        sonucAlani.textContent = "Başvurunuz başarıyla iletildi. Yönetim kurulumuz sizinle irtibata geçecektir.";
-        document.getElementById("uyelik-formu").reset();
-      } catch (err) {
-        sonucAlani.textContent = "Başvuru iletilirken bir hata oluştu. Lütfen bilgilerinizi kontrol ediniz.";
-      }
-    });
-  </script>
+  <script type="module" src="/js/main.js"></script>
+  <script type="module" src="/js/forms.js"></script>
 </body>
 </html>

@@ -1,18 +1,58 @@
 import { db } from "./api.js";
 import { el, guvenliMetinAyristir } from "./utils.js";
+import { temaYonetiminiBaslat } from "./tema.js";
+import { ekIcerikleriYukle, sosyalBaglantilariGuncelle, takvimIndir, ayTakviminiHazirla } from "./ozellikler.js";
 
 // DOM hazır olduğunda ilk olarak arayüz etkileşimlerini (menü & tema) anında bağla
 document.addEventListener("DOMContentLoaded", () => {
+  ortakGezinmeyiHazirla();
   mobilMenuyuBaslat();
-  temaYonetimiBaslat();
+  temaYonetiminiBaslat();
   cerezBanneriBaslat();
 
   // Ağ (Supabase) isteklerini arayüzü kilitlemeden arka planda çalıştır
   ayarlarıVeBakimiDenetle();
   menuyuYukle();
   publicIcerikleriYukle();
+  ekIcerikleriYukle();
   googleSchemaOlustur();
 });
+
+function ortakGezinmeyiHazirla() {
+  const headerContent = document.querySelector(".site-header .header-icerik");
+  if (!headerContent) return;
+  let nav = headerContent.querySelector("nav.ana-menu");
+  if (!nav) {
+    nav = el("nav", { id: "ana-navigasyon", class: "ana-menu", "aria-label": "Ana Menü" });
+    nav.appendChild(el("ul", { id: "menu-liste" }));
+    headerContent.appendChild(nav);
+  }
+  nav.id = "ana-navigasyon";
+  if (!nav.querySelector("#menu-liste")) nav.replaceChildren(el("ul", { id: "menu-liste" }));
+  let actions = headerContent.querySelector(".header-aksiyonlar");
+  if (!actions) { actions = el("div", { class: "header-aksiyonlar" }); headerContent.appendChild(actions); }
+  if (!actions.querySelector("#mobil-menu-tetikleyici")) actions.appendChild(el("button", {
+    id: "mobil-menu-tetikleyici", class: "mobil-menu-btn", type: "button",
+    "aria-label": "Menüyü Aç/Kapat", "aria-expanded": "false", "aria-controls": "ana-navigasyon", text: "Menü"
+  }));
+  if (!actions.querySelector("#tema-degistirici")) {
+    actions.insertBefore(el("button", { id: "tema-degistirici", class: "btn btn-ikincil", type: "button", "aria-label": "Görünüm temasını değiştir", text: "Tema" }), actions.firstChild);
+  }
+}
+
+function menuYolu(value) {
+  try {
+    const url = new URL(value, window.location.origin);
+    return url.pathname.replace(/\.html?$/i, "").replace(/\/$/, "") || "/";
+  } catch { return ""; }
+}
+
+function menuAnahtari(value) {
+  try {
+    const url = new URL(value, window.location.origin);
+    return `${url.origin}${menuYolu(url.href)}`;
+  } catch { return ""; }
+}
 
 async function publicIcerikleriYukle() {
   const tasks = [];
@@ -41,7 +81,7 @@ function icerikYok(kapsayici, mesaj) {
 function tarihMetni(value, options = {}) {
   if (!value) return "";
   const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? "" : date.toLocaleDateString("tr-TR", options);
+  return Number.isNaN(date.getTime()) ? "" : options.timeStyle ? date.toLocaleString("tr-TR", options) : date.toLocaleDateString("tr-TR", options);
 }
 
 function guvenliUrl(value) {
@@ -73,16 +113,46 @@ async function haberleriYukle() {
   const home = document.getElementById("son-haberler-izgara");
   const page = document.getElementById("haber-listesi");
   const hedefler = [home, page].filter(Boolean);
-  const rows = await publicKayitlariGetir("haberler", "durum=eq.yayinda&deleted_at=is.null&order=yayin_tarihi.desc&limit=20");
+  const rows = await publicKayitlariGetir("haberler", "select=baslik,ozet,slug,kapak_gorseli,kategori,yayin_tarihi&durum=eq.yayinda&deleted_at=is.null&order=yayin_tarihi.desc&limit=500");
   if (!rows) { hedefler.forEach(el => icerikYok(el, "Haberler şu anda yüklenemiyor.")); return; }
   const gosterilecek = rows.filter(row => !row.yayin_tarihi || new Date(row.yayin_tarihi) <= new Date());
+  const search = document.getElementById("haber-arama");
+  const category = document.getElementById("haber-kategori");
+  const more = document.getElementById("haber-daha-fazla");
+  const status = document.getElementById("haber-sonuc-bilgisi");
+  let limit = 9;
+  if (category) {
+    const categories = [...new Set(gosterilecek.map(row => row.kategori).filter(Boolean))].sort((a, b) => a.localeCompare(b, "tr"));
+    category.replaceChildren(el("option", { value: "", text: "Tüm kategoriler" }), ...categories.map(name => el("option", { value: name, text: name })));
+  }
+  const drawPage = () => {
+    const query = search?.value.trim().toLocaleLowerCase("tr") || "";
+    const selectedCategory = category?.value || "";
+    const filtered = gosterilecek.filter(row => (!selectedCategory || row.kategori === selectedCategory)
+      && (!query || [row.baslik, row.ozet, row.kategori].some(value => String(value || "").toLocaleLowerCase("tr").includes(query))));
+    const visible = filtered.slice(0, limit);
+    page.replaceChildren(...visible.map(row => icerikKarti({
+      title: row.baslik,
+      text: row.ozet,
+      href: `/haber/${encodeURIComponent(row.slug)}`,
+      image: row.kapak_gorseli,
+      meta: [tarihMetni(row.yayin_tarihi), row.kategori].filter(Boolean).join(" · ")
+    })));
+    if (!visible.length) icerikYok(page, query || selectedCategory ? "Aramanızla eşleşen haber bulunamadı." : "Henüz yayınlanmış haber bulunmuyor.");
+    if (status) status.textContent = filtered.length ? `${filtered.length} haber bulundu; ${visible.length} tanesi gösteriliyor.` : "";
+    if (more) more.hidden = visible.length >= filtered.length;
+  };
+  search?.addEventListener("input", () => { limit = 9; drawPage(); });
+  category?.addEventListener("change", () => { limit = 9; drawPage(); });
+  more?.addEventListener("click", () => { limit += 9; drawPage(); });
   for (const hedef of hedefler) {
-    const liste = hedef === home ? gosterilecek.slice(0, 3) : gosterilecek;
+    if (hedef === page) { drawPage(); continue; }
+    const liste = gosterilecek.slice(0, 3);
     if (!liste.length) { icerikYok(hedef, "Henüz yayınlanmış haber bulunmuyor."); continue; }
     hedef.replaceChildren(...liste.map(row => icerikKarti({
       title: row.baslik,
       text: row.ozet,
-      href: `${window.location.pathname.includes("/sayfalar/") ? "./haber-detay.html" : "./sayfalar/haber-detay.html"}?slug=${encodeURIComponent(row.slug)}`,
+      href: `/haber/${encodeURIComponent(row.slug)}`,
       image: row.kapak_gorseli,
       meta: [tarihMetni(row.yayin_tarihi), row.kategori].filter(Boolean).join(" · ")
     })));
@@ -97,15 +167,24 @@ async function etkinlikleriYukle() {
   if (!rows) { hedefler.forEach(el => icerikYok(el, "Etkinlikler şu anda yüklenemiyor.")); return; }
   const now = Date.now();
   const current = rows.filter(row => !row.baslangic_tarihi || new Date(row.baslangic_tarihi).getTime() >= now);
+  ayTakviminiHazirla(rows);
+  const documents = page ? await publicKayitlariGetir("belgeler", "durum=eq.yayinda&deleted_at=is.null") : [];
   for (const hedef of hedefler) {
     const liste = hedef === home ? current.slice(0, 3) : current;
     if (!liste.length) { icerikYok(hedef, "Şu anda yaklaşan etkinlik bulunmuyor."); continue; }
-    hedef.replaceChildren(...liste.map(row => icerikKarti({
+    hedef.replaceChildren(...liste.map(row => {
+      const card = icerikKarti({
       title: row.baslik,
-      text: row.aciklama,
+      text: [row.aciklama, row.gundem ? `Gündem:\n${row.gundem}` : ""].filter(Boolean).join("\n\n"),
       image: row.gorsel_url,
-      meta: [tarihMetni(row.baslangic_tarihi, { dateStyle: "medium", timeStyle: "short" }), row.konum].filter(Boolean).join(" · ")
-    })));
+      meta: [({ etkinlik: "Etkinlik", genel_kurul: "Genel kurul", toplanti: "Toplantı" })[row.tur], tarihMetni(row.baslangic_tarihi, { dateStyle: "medium", timeStyle: "short" }), row.konum].filter(Boolean).join(" · ")
+      });
+      card.appendChild(el("button", { type: "button", class: "btn btn-ikincil", text: "Takvime indir (.ics)", onclick: () => takvimIndir(row) }));
+      const doc = documents?.find(item => item.id === row.tutanak_belge_id);
+      const documentUrl = guvenliUrl(doc?.dosya_url);
+      if (documentUrl) card.appendChild(el("a", { href: documentUrl, class: "btn btn-ikincil", text: "Tutanak PDF", target: "_blank", rel: "noopener noreferrer" }));
+      return card;
+    }));
   }
 }
 
@@ -163,9 +242,16 @@ async function galeriyiYukle() {
 async function koyleriYukle() {
   const root = document.getElementById("koy-listesi");
   const rows = await publicKayitlariGetir("koyler", "deleted_at=is.null&order=sira.asc,ad.asc");
-  if (!rows) return;
-  if (!rows.length) return; // Keep the built-in Kapıkaya description as a fallback.
-  root.replaceChildren(...rows.map(row => icerikKarti({ title: row.ad, text: [row.kisa_tanitim, row.detay_bilgi].filter(Boolean).join("\n\n"), image: row.kapak_gorseli })));
+  if (!rows) { icerikYok(root, "Köy bilgileri şu anda yüklenemiyor."); return; }
+  if (!rows.length) { icerikYok(root, "Köy tanıtımları henüz yayımlanmamış."); return; }
+  root.replaceChildren(...rows.map(row => {
+    const card = icerikKarti({ title: row.ad, text: [row.kisa_tanitim, row.detay_bilgi].filter(Boolean).join("\n\n"), image: row.kapak_gorseli });
+    if (row.enlem !== null && row.enlem !== undefined && row.boylam !== null && row.boylam !== undefined) {
+      const lat = Number(row.enlem), lon = Number(row.boylam);
+      if (Number.isFinite(lat) && Number.isFinite(lon) && Math.abs(lat) <= 90 && Math.abs(lon) <= 180) card.appendChild(el("a", { href: `https://www.openstreetmap.org/?mlat=${lat}&mlon=${lon}#map=14/${lat}/${lon}`, class: "btn btn-ikincil", text: "Haritada aç", target: "_blank", rel: "noopener noreferrer" }));
+    }
+    return card;
+  }));
 }
 
 async function kuruluYukle() {
@@ -180,7 +266,7 @@ async function belgeleriYukle() {
   const root = document.getElementById("belge-listesi");
   const rows = await publicKayitlariGetir("belgeler", "durum=eq.yayinda&deleted_at=is.null&order=created_at.desc");
   if (!rows) { icerikYok(root, "Belgeler şu anda yüklenemiyor."); return; }
-  if (!rows.length) { icerikYok(root, "Henüz yayınlanmış belge bulunmuyor."); return; }
+  if (!rows.length) { icerikYok(root, "Tüzük ve diğer resmi belgeler yakında yayımlanacaktır."); return; }
   root.replaceChildren(...rows.map(row => {
     const card = icerikKarti({ title: row.baslik, text: `${row.kategori} · ${row.surum}` });
     const url = guvenliUrl(row.dosya_url);
@@ -249,22 +335,20 @@ function mobilMenuyuBaslat() {
     }
   });
 
-  // Menü içindeki bir linke tıklandığında menüyü kapat
-  navigasyon.querySelectorAll("a").forEach((link) => {
-    link.addEventListener("click", () => {
+  // Dinamik menü sonradan çizilse de bağlantılar tıklanınca menüyü kapat.
+  navigasyon.addEventListener("click", (event) => {
+    if (event.target.closest("a")) {
       navigasyon.classList.remove("acik");
       tetikleyici.setAttribute("aria-expanded", "false");
-    });
+    }
   });
 }
 
 async function ayarlarıVeBakimiDenetle() {
   try {
     const ayarlar = await db.select("ayarlar", "halka_acik=eq.true");
-    if (!ayarlar) return;
-
     const ayarHaritasi = {};
-    ayarlar.forEach((a) => (ayarHaritasi[a.anahtar] = a.deger));
+    (ayarlar || []).forEach((a) => (ayarHaritasi[a.anahtar] = a.deger));
 
     const isInPages = window.location.pathname.includes("/sayfalar/");
     const isInAdmin = window.location.pathname.includes("/yonetim/");
@@ -283,12 +367,20 @@ async function ayarlarıVeBakimiDenetle() {
 
     document.querySelectorAll("[data-ayar]").forEach((eleman) => {
       const anahtar = eleman.getAttribute("data-ayar");
-      if (ayarHaritasi[anahtar]) {
-        eleman.textContent = ayarHaritasi[anahtar];
+      if (Object.hasOwn(ayarHaritasi, anahtar)) {
+        if (eleman instanceof HTMLInputElement || eleman instanceof HTMLTextAreaElement) eleman.value = ayarHaritasi[anahtar];
+        else {
+          eleman.textContent = ayarHaritasi[anahtar];
+          if (eleman instanceof HTMLAnchorElement && anahtar === "eposta") eleman.href = `mailto:${ayarHaritasi[anahtar]}`;
+          if (eleman instanceof HTMLAnchorElement && anahtar === "telefon") eleman.href = `tel:${ayarHaritasi[anahtar].replace(/[^+\d]/g, "")}`;
+        }
       }
     });
+    sosyalBaglantilariGuncelle(ayarHaritasi);
   } catch (err) {
     console.warn("Ayarlar yüklenirken hata oluştu:", err);
+  } finally {
+    document.dispatchEvent(new Event("babder:ayarlar-yuklendi"));
   }
 }
 
@@ -310,62 +402,41 @@ function cerezBanneriBaslat() {
   }
 }
 
-function temaYonetimiBaslat() {
-  const tema = localStorage.getItem("babder_tema") || "varsayilan";
-  document.documentElement.setAttribute("data-tema", tema);
-
-  const temaSecici = document.getElementById("tema-degistirici");
-  if (temaSecici) {
-    temaSecici.addEventListener("click", () => {
-      const yeniTema =
-        document.documentElement.getAttribute("data-tema") === "koyu"
-          ? "varsayilan"
-          : "koyu";
-      document.documentElement.setAttribute("data-tema", yeniTema);
-      localStorage.setItem("babder_tema", yeniTema);
-    });
-  }
-}
-
 async function menuyuYukle() {
-  try {
-    const menuListe = document.getElementById("menu-liste");
-    if (!menuListe) return;
-
-    const veriler = await db.select(
-      "menu_ogeleri",
-      "aktif=eq.true&konum=eq.header&order=sira.asc"
-    );
-    if (veriler && veriler.length > 0) {
-      const isInPages = window.location.pathname.includes("/sayfalar/");
-      menuListe.innerHTML = "";
-      veriler.forEach((m) => {
-        let parsedHref;
-        try { parsedHref = new URL(m.baglanti, window.location.origin); } catch { return; }
-        if (!["http:", "https:"].includes(parsedHref.protocol)) return;
-        const li = document.createElement("li");
-        const a = document.createElement("a");
-
-        let linkHref = m.baglanti.trim();
-        if (isInPages) {
-          if (linkHref === "/" || linkHref === "./" || linkHref === "index.html") {
-            linkHref = "../index.html";
-          } else if (linkHref.startsWith("/sayfalar/")) {
-            linkHref = linkHref.replace("/sayfalar/", "./");
-          } else if (!linkHref.startsWith("/") && !/^https?:\/\//i.test(linkHref)) {
-            linkHref = `../${linkHref}`;
-          }
-        }
-
-        a.href = linkHref;
-        a.textContent = m.baslik;
-        li.appendChild(a);
-        menuListe.appendChild(li);
-      });
-    }
-  } catch (err) {
-    console.warn("Dinamik menü yüklenemedi:", err);
+  const menuListe = document.getElementById("menu-liste");
+  if (!menuListe) return;
+  const defaults = [
+    ["Ana Sayfa", "/"], ["Hakkımızda", "/sayfalar/hakkimizda.html"], ["Köylerimiz", "/sayfalar/koylerimiz.html"],
+    ["Yönetim Kurulu", "/sayfalar/yonetim-kurulu.html"], ["Haberler", "/sayfalar/haberler.html"], ["Etkinlikler", "/sayfalar/etkinlikler.html"],
+    ["Galeri", "/sayfalar/galeri.html"], ["Tüzük ve Belgeler", "/sayfalar/tuzuk-ve-belgeler.html"], ["Üyelik", "/sayfalar/uyelik-basvurusu.html"],
+    ["Bağış", "/sayfalar/bagis.html"], ["İletişim", "/sayfalar/iletisim.html"], ["Taziyeler", "/sayfalar/taziyeler.html"], ["SSS", "/sayfalar/sss.html"], ["Nasıl Üye Olurum?", "/sayfalar/nasil-uye-olurum.html"]
+  ];
+  let configured = [];
+  try { configured = await db.select("menu_ogeleri", "aktif=eq.true&konum=eq.header&order=sira.asc"); }
+  catch (err) { console.warn("Dinamik menü yüklenemedi, varsayılan menü gösteriliyor:", err); }
+  const items = [];
+  for (const menu of configured || []) {
+    let parsed;
+    try { parsed = new URL(menu.baglanti, window.location.origin); } catch { continue; }
+    if (!["http:", "https:"].includes(parsed.protocol)) continue;
+    items.push({ label: menu.baslik, href: parsed.href });
   }
+  const paths = new Set(items.map(item => menuAnahtari(item.href)));
+  for (const [label, href] of defaults) {
+    if (!paths.has(menuAnahtari(href))) items.push({ label, href });
+  }
+  const currentPath = menuYolu(location.pathname);
+  const menuOgesi = item => {
+    const linkPath = menuYolu(item.href);
+    const anchor = el("a", { href: item.href, text: item.label });
+    if (linkPath && linkPath === currentPath) anchor.setAttribute("aria-current", "page");
+    const listItem = el("li", {}, [anchor]);
+    if (item.label === "Bağış") anchor.classList.add("btn", "btn-vurgu");
+    return listItem;
+  };
+  const visible = items.slice(0, 7).map(menuOgesi);
+  if (items.length > 7) visible.push(el("li", { class: "menu-ek" }, [el("details", {}, [el("summary", { text: "Diğer Sayfalar" }), el("ul", { class: "menu-ek-liste" }, items.slice(7).map(menuOgesi))])]));
+  menuListe.replaceChildren(...visible);
 }
 
 function googleSchemaOlustur() {
@@ -375,7 +446,7 @@ function googleSchemaOlustur() {
     name: "Şanlıurfa Siverek Kapıkaya Bab Köyü ve Köyleri Sosyal Yardımlaşma ve Dayanışma Derneği",
     alternateName: "BABDER",
     url: window.location.origin,
-    logo: `${window.location.origin}/img/logo.png`,
+    logo: `${window.location.origin}/img/logo-192.webp`,
     description:
       "Şanlıurfa Siverek Kapıkaya Bab Köyü ve çevre köylerinin sosyal yardımlaşma ve dayanışma derneği resmi web sitesi.",
     foundingDate: "2019",

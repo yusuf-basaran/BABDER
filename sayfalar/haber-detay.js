@@ -3,11 +3,12 @@ import { el, guvenliMetinAyristir } from "../js/utils.js";
 
 document.addEventListener("DOMContentLoaded", async () => {
   const urlParams = new URLSearchParams(window.location.search);
-  const slug = urlParams.get("slug");
+  const routeSlug = window.location.pathname.match(/^\/haber\/([a-z0-9-]+)\/?$/)?.[1];
+  const slug = urlParams.get("slug") || routeSlug;
   const kapsayici = document.getElementById("haber-icerik-alani");
 
   if (!slug) {
-    kapsayici.innerHTML = "";
+    kapsayici.replaceChildren();
     kapsayici.appendChild(el("p", { text: "Geçerli bir haber seçilmedi." }));
     return;
   }
@@ -19,7 +20,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     return;
   }
 
-  kapsayici.innerHTML = "";
+  kapsayici.replaceChildren();
 
   if (!sonuclar || sonuclar.length === 0) {
     kapsayici.appendChild(el("h1", { text: "Haber Bulunamadı" }));
@@ -59,4 +60,10 @@ document.addEventListener("DOMContentLoaded", async () => {
   const govdeKapsayici = el("div", { class: "haber-govde-metin", style: "line-height: 1.8;" });
   govdeKapsayici.appendChild(guvenliMetinAyristir(haber.icerik));
   kapsayici.appendChild(govdeKapsayici);
+  const shareUrl = `${window.location.origin}/haber/${encodeURIComponent(haber.slug)}`;
+  kapsayici.appendChild(el("p", {}, [
+    el("a", { href: `https://wa.me/?text=${encodeURIComponent(`${haber.baslik} ${shareUrl}`)}`, text: "WhatsApp'ta paylaş", target: "_blank", rel: "noopener noreferrer" }),
+    " · ",
+    el("a", { href: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`, text: "Facebook'ta paylaş", target: "_blank", rel: "noopener noreferrer" })
+  ]));
 });

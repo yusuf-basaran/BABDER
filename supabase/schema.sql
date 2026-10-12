@@ -181,6 +181,17 @@ CREATE TABLE IF NOT EXISTS koyler (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+ALTER TABLE koyler ADD COLUMN IF NOT EXISTS enlem NUMERIC(9,6);
+ALTER TABLE koyler ADD COLUMN IF NOT EXISTS boylam NUMERIC(9,6);
+DO $$ BEGIN
+    ALTER TABLE koyler ADD CONSTRAINT koyler_enlem_aralik CHECK (enlem IS NULL OR enlem BETWEEN -90 AND 90);
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+DO $$ BEGIN
+    ALTER TABLE koyler ADD CONSTRAINT koyler_boylam_aralik CHECK (boylam IS NULL OR boylam BETWEEN -180 AND 180);
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+
 CREATE TABLE IF NOT EXISTS belgeler (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     baslik VARCHAR(200) NOT NULL,
@@ -188,6 +199,50 @@ CREATE TABLE IF NOT EXISTS belgeler (
     dosya_url TEXT NOT NULL,
     surum VARCHAR(20) NOT NULL DEFAULT 'v1.0',
     durum icerik_durum NOT NULL DEFAULT 'yayinda',
+    deleted_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+ALTER TABLE etkinlikler ADD COLUMN IF NOT EXISTS tur VARCHAR(20) NOT NULL DEFAULT 'etkinlik';
+ALTER TABLE etkinlikler ADD COLUMN IF NOT EXISTS gundem TEXT;
+ALTER TABLE etkinlikler ADD COLUMN IF NOT EXISTS tutanak_belge_id UUID;
+DO $$ BEGIN
+    ALTER TABLE etkinlikler ADD CONSTRAINT etkinlikler_tur_gecerli CHECK (tur IN ('etkinlik', 'genel_kurul', 'toplanti'));
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+DO $$ BEGIN
+    ALTER TABLE etkinlikler ADD CONSTRAINT etkinlikler_tutanak_belge_fk
+        FOREIGN KEY (tutanak_belge_id) REFERENCES belgeler(id) ON DELETE SET NULL;
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+
+CREATE TABLE IF NOT EXISTS taziyeler (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    ad_soyad VARCHAR(200) NOT NULL,
+    koy VARCHAR(120) NOT NULL,
+    aciklama TEXT,
+    cenaze_yeri VARCHAR(255) NOT NULL,
+    cenaze_tarihi TIMESTAMPTZ NOT NULL,
+    yayin_tarihi TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    bitis_tarihi TIMESTAMPTZ,
+    aile_izni BOOLEAN NOT NULL DEFAULT FALSE,
+    durum icerik_durum NOT NULL DEFAULT 'taslak',
+    deleted_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    CONSTRAINT taziyeler_yayin_aile_izni CHECK (durum <> 'yayinda' OR aile_izni = TRUE)
+);
+
+CREATE TABLE IF NOT EXISTS kampanyalar (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    baslik VARCHAR(200) NOT NULL,
+    aciklama TEXT NOT NULL,
+    hedef_tutar NUMERIC(12,2) NOT NULL CHECK (hedef_tutar > 0),
+    toplanan_tutar NUMERIC(12,2) NOT NULL DEFAULT 0 CHECK (toplanan_tutar >= 0),
+    bitis_tarihi TIMESTAMPTZ,
+    gorsel_url TEXT,
+    durum icerik_durum NOT NULL DEFAULT 'taslak',
     deleted_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -318,6 +373,8 @@ ALTER TABLE anasayfa_bolumleri ENABLE ROW LEVEL SECURITY;
 ALTER TABLE haberler ENABLE ROW LEVEL SECURITY;
 ALTER TABLE duyurular ENABLE ROW LEVEL SECURITY;
 ALTER TABLE etkinlikler ENABLE ROW LEVEL SECURITY;
+ALTER TABLE taziyeler ENABLE ROW LEVEL SECURITY;
+ALTER TABLE kampanyalar ENABLE ROW LEVEL SECURITY;
 ALTER TABLE albumler ENABLE ROW LEVEL SECURITY;
 ALTER TABLE galeri ENABLE ROW LEVEL SECURITY;
 ALTER TABLE yonetim_kurulu ENABLE ROW LEVEL SECURITY;
@@ -339,9 +396,69 @@ DECLARE
 BEGIN
     SELECT rol INTO kullanici_rol FROM yoneticiler
     WHERE user_id = auth.uid() AND aktif = TRUE;
+    IF kullanici_rol = 'admin' AND COALESCE(auth.jwt() ->> 'aal', 'aal1') <> 'aal2' THEN
+        RETURN NULL;
+    END IF;
     RETURN kullanici_rol;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, pg_temp;
+
+-- Editörlerin yayın yetkisi kapalıysa doğrudan API çağrıları da taslağa alınır.
+CREATE OR REPLACE FUNCTION editor_yayin_durumunu_kisitla()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, pg_temp
+AS $$
+DECLARE
+    editor_yayin_aktif BOOLEAN := FALSE;
+BEGIN
+    IF TG_TABLE_NAME = 'taziyeler' THEN
+        IF NEW.durum = 'yayinda' AND NEW.aile_izni IS DISTINCT FROM TRUE THEN
+            RAISE EXCEPTION 'Taziye duyurusu için aile izni işaretlenmelidir.' USING ERRCODE = '23514';
+        END IF;
+    END IF;
+
+    IF NEW.durum = 'yayinda'
+       AND (TG_OP = 'INSERT' OR OLD.durum IS DISTINCT FROM NEW.durum)
+       AND mevcut_kullanici_rolu() = 'editor' THEN
+        SELECT COALESCE(deger, 'false') = 'true'
+        INTO editor_yayin_aktif
+        FROM ayarlar
+        WHERE anahtar = 'editor_yayinlayabilir';
+
+        IF NOT COALESCE(editor_yayin_aktif, FALSE) THEN
+            NEW.durum := 'incelemede';
+        END IF;
+    END IF;
+    RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS editor_yayin_kisitla_sayfalar ON sayfalar;
+CREATE TRIGGER editor_yayin_kisitla_sayfalar
+BEFORE INSERT OR UPDATE OF durum ON sayfalar
+FOR EACH ROW EXECUTE FUNCTION editor_yayin_durumunu_kisitla();
+
+DROP TRIGGER IF EXISTS editor_yayin_kisitla_haberler ON haberler;
+CREATE TRIGGER editor_yayin_kisitla_haberler
+BEFORE INSERT OR UPDATE OF durum ON haberler
+FOR EACH ROW EXECUTE FUNCTION editor_yayin_durumunu_kisitla();
+
+DROP TRIGGER IF EXISTS editor_yayin_kisitla_duyurular ON duyurular;
+CREATE TRIGGER editor_yayin_kisitla_duyurular
+BEFORE INSERT OR UPDATE OF durum ON duyurular
+FOR EACH ROW EXECUTE FUNCTION editor_yayin_durumunu_kisitla();
+
+DROP TRIGGER IF EXISTS editor_yayin_kisitla_etkinlikler ON etkinlikler;
+CREATE TRIGGER editor_yayin_kisitla_etkinlikler
+BEFORE INSERT OR UPDATE OF durum ON etkinlikler
+FOR EACH ROW EXECUTE FUNCTION editor_yayin_durumunu_kisitla();
+
+DROP TRIGGER IF EXISTS editor_yayin_kisitla_taziyeler ON taziyeler;
+CREATE TRIGGER editor_yayin_kisitla_taziyeler
+BEFORE INSERT OR UPDATE OF durum, aile_izni ON taziyeler
+FOR EACH ROW EXECUTE FUNCTION editor_yayin_durumunu_kisitla();
 
 INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 VALUES
@@ -425,7 +542,7 @@ BEGIN
     END;
     IF TG_OP IN ('UPDATE', 'DELETE') AND TG_TABLE_NAME IN (
         'menu_ogeleri', 'sayfalar', 'sayfa_bolumleri', 'anasayfa_bolumleri', 'haberler',
-        'duyurular', 'etkinlikler', 'albumler', 'galeri', 'yonetim_kurulu', 'koyler',
+        'duyurular', 'etkinlikler', 'taziyeler', 'kampanyalar', 'albumler', 'galeri', 'yonetim_kurulu', 'koyler',
         'belgeler', 'hukuki_metinler'
     ) THEN
         INSERT INTO surumler (tablo_adi, kayit_id, veri, degistiren)
@@ -448,7 +565,7 @@ DECLARE
 BEGIN
     FOREACH tablo IN ARRAY ARRAY[
         'yoneticiler', 'ayarlar', 'menu_ogeleri', 'sayfalar', 'sayfa_bolumleri',
-        'anasayfa_bolumleri', 'haberler', 'duyurular', 'etkinlikler', 'albumler',
+        'anasayfa_bolumleri', 'haberler', 'duyurular', 'etkinlikler', 'taziyeler', 'kampanyalar', 'albumler',
         'galeri', 'yonetim_kurulu', 'koyler', 'belgeler', 'hukuki_metinler',
         'uyelik_basvurulari', 'iletisim_mesajlari', 'uyeler', 'aidat_kayitlari', 'medya'
     ] LOOP
@@ -491,6 +608,13 @@ DROP POLICY IF EXISTS "duyurular_kamu_okuma" ON duyurular;
 CREATE POLICY "duyurular_kamu_okuma" ON duyurular FOR SELECT TO anon, authenticated USING (durum = 'yayinda' AND yayin_tarihi <= NOW() AND (bitis_tarihi IS NULL OR bitis_tarihi >= NOW()) AND deleted_at IS NULL);
 DROP POLICY IF EXISTS "etkinlikler_kamu_okuma" ON etkinlikler;
 CREATE POLICY "etkinlikler_kamu_okuma" ON etkinlikler FOR SELECT TO anon, authenticated USING (durum = 'yayinda' AND deleted_at IS NULL);
+DROP POLICY IF EXISTS "taziyeler_kamu_okuma" ON taziyeler;
+CREATE POLICY "taziyeler_kamu_okuma" ON taziyeler FOR SELECT TO anon, authenticated USING (
+    durum = 'yayinda' AND aile_izni = TRUE AND yayin_tarihi <= NOW()
+    AND (bitis_tarihi IS NULL OR bitis_tarihi >= NOW()) AND deleted_at IS NULL
+);
+DROP POLICY IF EXISTS "kampanyalar_kamu_okuma" ON kampanyalar;
+CREATE POLICY "kampanyalar_kamu_okuma" ON kampanyalar FOR SELECT TO anon, authenticated USING (durum = 'yayinda' AND deleted_at IS NULL);
 DROP POLICY IF EXISTS "albumler_kamu_okuma" ON albumler;
 CREATE POLICY "albumler_kamu_okuma" ON albumler FOR SELECT TO anon, authenticated USING (deleted_at IS NULL);
 DROP POLICY IF EXISTS "galeri_kamu_okuma" ON galeri;
@@ -515,6 +639,14 @@ DROP POLICY IF EXISTS "etkinlikler_panel_okuma" ON etkinlikler;
 CREATE POLICY "etkinlikler_panel_okuma" ON etkinlikler FOR SELECT TO authenticated USING (mevcut_kullanici_rolu() IS NOT NULL);
 DROP POLICY IF EXISTS "etkinlikler_panel_yazma" ON etkinlikler;
 CREATE POLICY "etkinlikler_panel_yazma" ON etkinlikler FOR ALL TO authenticated USING (mevcut_kullanici_rolu() IN ('admin', 'editor'));
+DROP POLICY IF EXISTS "taziyeler_panel_okuma" ON taziyeler;
+CREATE POLICY "taziyeler_panel_okuma" ON taziyeler FOR SELECT TO authenticated USING (mevcut_kullanici_rolu() IS NOT NULL);
+DROP POLICY IF EXISTS "taziyeler_panel_yazma" ON taziyeler;
+CREATE POLICY "taziyeler_panel_yazma" ON taziyeler FOR ALL TO authenticated USING (mevcut_kullanici_rolu() IN ('admin', 'editor'));
+DROP POLICY IF EXISTS "kampanyalar_panel_okuma" ON kampanyalar;
+CREATE POLICY "kampanyalar_panel_okuma" ON kampanyalar FOR SELECT TO authenticated USING (mevcut_kullanici_rolu() IS NOT NULL);
+DROP POLICY IF EXISTS "kampanyalar_panel_yazma" ON kampanyalar;
+CREATE POLICY "kampanyalar_panel_yazma" ON kampanyalar FOR ALL TO authenticated USING (mevcut_kullanici_rolu() IN ('admin', 'editor'));
 DROP POLICY IF EXISTS "galeri_panel_okuma" ON galeri;
 CREATE POLICY "galeri_panel_okuma" ON galeri FOR SELECT TO authenticated USING (mevcut_kullanici_rolu() IS NOT NULL);
 DROP POLICY IF EXISTS "galeri_panel_yazma" ON galeri;
@@ -597,6 +729,8 @@ INSERT INTO ayarlar (anahtar, deger, aciklama, halka_acik, hassas) VALUES
 ('kisa_ad', 'BABDER', 'Kısa marka adı', TRUE, FALSE),
 ('kurulus_yili', '2019', 'Resmi kuruluş yılı (Logoda 2019)', TRUE, FALSE),
 ('facebook_url', 'https://www.facebook.com/share/1DsdbdzV3n/', 'Resmi Facebook sayfası', TRUE, FALSE),
+('whatsapp_topluluk_url', '', 'Resmi WhatsApp topluluk bağlantısı', TRUE, FALSE),
+('instagram_url', '', 'Resmi Instagram sayfası', TRUE, FALSE),
 ('adres', '[DERNEK ADRESİ]', 'Resmi dernek merkezi adresi', TRUE, FALSE),
 ('telefon', '[TELEFON NUMARASI]', 'İletişim telefonu', TRUE, FALSE),
 ('eposta', '[E-POSTA ADRESİ]', 'İletişim e-postası', TRUE, FALSE),
@@ -610,3 +744,20 @@ INSERT INTO ayarlar (anahtar, deger, aciklama, halka_acik, hassas) VALUES
 ('cerez_banner_metin', 'Sitemizde yalnızca güvenli oturum ve zorunlu işlevler için yerel depolama kullanılmaktadır.', 'Çerez bilgilendirme metni', TRUE, FALSE),
 ('site_temasi', 'dernek_yesili', 'Aktif görsel tema adı', TRUE, FALSE)
 ON CONFLICT (anahtar) DO NOTHING;
+
+-- Genel formlar yalnızca doğrulanmış Edge Function üzerinden yazılır.
+DROP POLICY IF EXISTS "basvuru_anon_ekleme" ON uyelik_basvurulari;
+DROP POLICY IF EXISTS "mesaj_anon_ekleme" ON iletisim_mesajlari;
+CREATE TABLE IF NOT EXISTS form_hiz_siniri (ip_hash TEXT NOT NULL, saat TIMESTAMPTZ NOT NULL, adet INT NOT NULL DEFAULT 1, PRIMARY KEY(ip_hash,saat));
+ALTER TABLE form_hiz_siniri ENABLE ROW LEVEL SECURITY;
+CREATE OR REPLACE FUNCTION form_hiz_sinirini_kullan(p_ip_hash TEXT) RETURNS BOOLEAN LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,pg_temp AS $$
+DECLARE kullanim INT;
+BEGIN
+ IF length(p_ip_hash) <> 64 THEN RAISE EXCEPTION 'Geçersiz istek'; END IF;
+ DELETE FROM form_hiz_siniri WHERE saat < NOW() - INTERVAL '1 day';
+ INSERT INTO form_hiz_siniri(ip_hash,saat,adet) VALUES(p_ip_hash,date_trunc('hour',NOW()),1)
+ ON CONFLICT(ip_hash,saat) DO UPDATE SET adet=form_hiz_siniri.adet+1 RETURNING adet INTO kullanim;
+ RETURN kullanim <= 5;
+END; $$;
+REVOKE ALL ON FUNCTION form_hiz_sinirini_kullan(TEXT) FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION form_hiz_sinirini_kullan(TEXT) TO service_role;

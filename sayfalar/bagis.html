@@ -26,43 +26,12 @@
 <body>
   <a href="#ana-icerik" class="erisebilirlik-atla">Ana İçeriğe Geç</a>
 
-  <header class="site-header">
-    <div class="header-icerik">
-      <!-- SOL: LOGO VE DERNEK ADI -->
-      <a href="../index.html" class="marka-alani">
-        <img src="../img/logo.png" alt="BABDER Resmi Logosu" class="marka-logo" width="48" height="48">
-        <div>
-          <span class="marka-baslik">BABDER</span>
-          <span class="marka-alt-baslik">Kapıkaya Bab Köyü ve Köyleri Derneği</span>
-        </div>
-      </a>
-
-      <!-- SAĞ: MENÜ -->
-      <nav id="ana-navigasyon" class="ana-menu" aria-label="Ana Menü">
-        <ul id="menu-liste">
-          <li><a href="../index.html">Ana Sayfa</a></li>
-          <li><a href="./hakkimizda.html">Hakkımızda</a></li>
-          <li><a href="./koylerimiz.html">Köylerimiz</a></li>
-          <li><a href="./haberler.html">Haberler</a></li>
-          <li><a href="./etkinlikler.html">Etkinlikler</a></li>
-          <li><a href="./galeri.html">Galeri</a></li>
-          <li><a href="./bagis.html" class="btn btn-vurgu">Bağış</a></li>
-          <li><a href="./iletisim.html">İletişim</a></li>
-        </ul>
-      </nav>
-
-      <div class="header-aksiyonlar">
-        <button id="mobil-menu-tetikleyici" class="mobil-menu-btn" aria-label="Menüyü Aç/Kapat" aria-expanded="false">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M4 6h16M4 12h16M4 18h16"></path>
-          </svg>
-        </button>
-      </div>
-    </div>
-  </header>
+  <!-- PARTIAL:header -->
 
   <main id="ana-icerik" class="kapsayici bolum-bosluk-buyuk">
     <h1>Derneğimize Destek Olun</h1>
+    <section><h2>Bağış Kampanyaları</h2><p>Bu bilgiler yönetim kurulunca güncellenir.</p><div id="kampanya-listesi" class="izgara-3"></div></section>
+    <section class="bolum-bosluk"><h2>Faaliyet Raporları</h2><div id="faaliyet-raporlari"></div></section>
     
     <div class="kart">
       <p><strong>Yasal Bilgilendirme:</strong> Bu sayfa yalnızca derneğimizin tüzük hedeflerini gerçekleştirmek üzere resmi banka hesap bilgilerini paylaşmaktadır. Çevrim içi ödeme veya kartlı tahsilat yapılmamaktadır. Kamu yardımı toplama faaliyetleri 2860 sayılı Yardım Toplama Kanunu ve dernekler mevzuatına tabidir.</p>
@@ -74,54 +43,18 @@
       <p><strong>Banka:</strong> <span data-ayar="banka_adi">[BANKA ADI]</span></p>
       <div class="form-grup">
         <label for="iban-kutusu">IBAN:</label>
-        <input type="text" id="iban-kutusu" class="form-denetim" value="[IBAN]" readonly>
+        <input type="text" id="iban-kutusu" class="form-denetim" data-ayar="iban" value="Yükleniyor…" readonly>
       </div>
-      <button id="iban-kopyala-btn" class="btn btn-ana">IBAN'ı Kopyala</button>
-      <p id="kopyalandi-bildirim" class="toast-basari gizli">IBAN panoya kopyalandı!</p>
+      <button id="iban-kopyala-btn" class="btn btn-ana" type="button" disabled>IBAN'ı Kopyala</button>
+      <p id="kopyalandi-bildirim" class="toast-basari gizli" role="status" aria-live="polite">IBAN panoya kopyalandı!</p>
     </div>
   </main>
 
   <!-- 3 SÜTUNLU KURUMSAL YEŞİL FOOTER -->
-  <footer class="site-footer">
-    <div class="kapsayici izgara-3">
-      <div>
-        <h3>BABDER</h3>
-        <p data-ayar="dernek_unvan">Şanlıurfa Siverek Kapıkaya Bab Köyü ve Köyleri Sosyal Yardımlaşma ve Dayanışma Derneği</p>
-        <p>Kütük No: <span data-ayar="kutuk_no">[KÜTÜK NO]</span></p>
-      </div>
-      <div>
-        <h3>İletişim</h3>
-        <p>Adres: <span data-ayar="adres">[DERNEK ADRESİ]</span></p>
-        <p>Telefon: <span data-ayar="telefon">[TELEFON NUMARASI]</span></p>
-        <p>E-Posta: <span data-ayar="eposta">[E-POSTA ADRESİ]</span></p>
-      </div>
-      <div>
-        <h3>Hukuki</h3>
-        <ul class="footer-link-liste">
-          <li><a href="./kvkk.html">KVKK Aydınlatma Metni</a></li>
-          <li><a href="./gizlilik-politikasi.html">Gizlilik Politikası</a></li>
-          <li><a href="./cerez-politikasi.html">Çerez Politikası</a></li>
-          <li><a href="./tuzuk-ve-belgeler.html">Dernek Tüzüğü</a></li>
-        </ul>
-      </div>
-    </div>
-    <div class="footer-alt">
-      <p>&copy; 2026 BABDER. Tüm hakları saklıdır.</p>
-    </div>
-  </footer>
+  <!-- PARTIAL:cookie -->
+  <!-- PARTIAL:footer -->
 
   <script type="module" src="../js/main.js"></script>
-  <script type="module">
-    document.getElementById("iban-kopyala-btn")?.addEventListener("click", () => {
-      const iban = document.getElementById("iban-kutusu").value;
-      navigator.clipboard.writeText(iban).then(() => {
-        const b = document.getElementById("kopyalandi-bildirim");
-        if (b) {
-          b.classList.remove("gizli");
-          setTimeout(() => b.classList.add("gizli"), 3000);
-        }
-      });
-    });
-  </script>
+  <script type="module" src="../js/forms.js"></script>
 </body>
 </html>

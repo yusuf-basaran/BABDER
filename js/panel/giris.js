@@ -1,6 +1,9 @@
 import { db } from "../api.js";
+import { temaYonetiminiBaslat } from "../tema.js";
+import { mfaAkisiniGoster } from "./mfa.js";
 
 document.addEventListener("DOMContentLoaded", () => {
+  temaYonetiminiBaslat();
   const form = document.getElementById("giris-formu");
   const btn = document.getElementById("giris-btn");
   const hataKutusu = document.getElementById("giris-hata");
@@ -28,11 +31,21 @@ document.addEventListener("DOMContentLoaded", () => {
     try {
       const res = await db.signIn(email, sifre);
       if (res && res.access_token) {
-        window.location.href = "./index.html";
+        const [manager] = await db.select("yoneticiler", `user_id=eq.${encodeURIComponent(res.user.id)}&select=rol,aktif&limit=1`);
+        if (!manager?.aktif) throw new Error("Bu hesabın etkin yönetici kaydı bulunmuyor.");
+        const authUser = await db.authUser();
+        const hasFactor = authUser.factors?.some(item => item.factor_type === "totp" && item.status === "verified");
+        if (manager.rol === "admin" || hasFactor) {
+          form.hidden = true;
+          const root = document.createElement("div"); root.dataset.mfa = "true"; form.after(root);
+          await mfaAkisiniGoster(root, () => { window.location.href = "./index.html"; });
+        } else window.location.href = "./index.html";
       } else {
         throw new Error("Oturum açılamadı.");
       }
     } catch (err) {
+      form.hidden = false;
+      form.parentElement.querySelector('[data-mfa="true"]')?.remove();
       console.error("Giriş hatası:", err);
       hataKutusu.textContent = err.message || "E-posta veya şifre hatalı.";
       hataKutusu.classList.remove("gizli");

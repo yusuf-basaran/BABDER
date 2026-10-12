@@ -206,3 +206,15 @@ body.panel-govde {
   font-size: 0.85rem;
   color: var(--renk-metin-soluk);
 }
+
+.panel-menu-btn { display: none; margin-right: .65rem; }
+@media (max-width: 900px) {
+  .panel-menu-btn { display: inline-flex; }
+  .panel-kenar { transform: translateX(-100%); box-shadow: var(--golge); }
+  .panel-kenar.acik { transform: translateX(0); }
+  .panel-ana-icerik { margin-left: 0; }
+  .panel-ust-cubuk { min-height: var(--panel-ust-yukseklik); height: auto; gap: .5rem; padding: .5rem var(--bosluk-m); }
+  .panel-icerik-alani { padding: var(--bosluk-m); }
+  .panel-ust-cubuk > div:last-child { gap: .5rem !important; }
+  .panel-ust-cubuk > div:last-child > span:first-child { display: none; }
+}

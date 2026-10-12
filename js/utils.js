@@ -3,7 +3,7 @@ export function el(etiket, ozellikler = {}, cocuklar = []) {
   for (const [anahtar, deger] of Object.entries(ozellikler)) {
     if (anahtar === "class" || anahtar === "className") oge.className = deger;
     else if (anahtar === "text") oge.textContent = deger;
-    else if (anahtar.startsWith("data-") || ["href", "src", "alt"].includes(anahtar)) oge.setAttribute(anahtar, deger);
+    else if (anahtar.startsWith("data-") || anahtar.startsWith("aria-") || ["href", "src", "alt", "for", "role", "target", "rel", "download"].includes(anahtar)) oge.setAttribute(anahtar, deger);
     else oge[anahtar] = deger;
   }
   if (!Array.isArray(cocuklar)) cocuklar = [cocuklar];
@@ -52,10 +52,10 @@ export function guvenliMetinAyristir(hamMetin) {
 export function toastGoster(mesaj, tur = "bilgi") {
   let toastAlani = document.getElementById("toast-kapsayici");
   if (!toastAlani) {
-    toastAlani = el("div", { id: "toast-kapsayici", class: "toast-alani" });
+    toastAlani = el("div", { id: "toast-kapsayici", class: "toast-alani", role: "status", "aria-live": "polite", "aria-atomic": "true" });
     document.body.appendChild(toastAlani);
   }
-  const t = el("div", { class: `toast toast-${tur}`, text: mesaj });
+  const t = el("div", { class: `toast toast-${tur}`, role: tur === "hata" ? "alert" : "status", text: mesaj });
   toastAlani.appendChild(t);
   setTimeout(() => t.remove(), 4000);
 }

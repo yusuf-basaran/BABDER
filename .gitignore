@@ -3,6 +3,10 @@
 .DS_Store
 Thumbs.db
 node_modules/
+dist/
+.vercel/
 *.key
 *.pem
 downloads/
+
+.lighthouseci/

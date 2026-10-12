@@ -1,0 +1,2 @@
+[functions.form-gonder]
+verify_jwt = false

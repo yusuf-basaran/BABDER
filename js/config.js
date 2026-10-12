@@ -5,3 +5,7 @@ export const CONFIG = {
   VARSAYILAN_FACEBOOK: "https://www.facebook.com/share/1DsdbdzV3n/",
   YER_TUTUCU_METIN: "[İÇERİK EKLENECEK]"
 };
+
+// Özel alan adına geçildiğinde bu adresi güncelleyin.
+export const SITE_URL = "https://babder.vercel.app";
+export const TURNSTILE_SITE_KEY = "[TURNSTILE_SITE_KEY]";

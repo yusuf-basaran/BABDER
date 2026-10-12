@@ -15,7 +15,7 @@
 
 Mevcut kurulumları güncellemek için de `supabase/schema.sql` dosyasını yeniden çalıştırabilirsiniz. Politika, Storage kovası ve trigger tanımları tekrar çalıştırılabilir şekilde hazırlanmıştır. Script hata verirse hata mesajını inceleyin ve canlı veritabanında değişiklik yapmadan önce yedek alın.
 
-Yayın yetkisi kısıtlamasını mevcut bir veritabanına tek başına uygulamak için `supabase/migrations/20261013_editor_yayin_kisitla.sql` dosyasını Supabase SQL Editor'de çalıştırın. Bu migration editörün yayın isteğini `incelemede` durumuna çevirir; yönetici ayarlarındaki izin açıldığında editör doğrudan yayınlayabilir.
+Editör yayın yetkisi kuralını mevcut veritabanına uygulamak için güncel `supabase/schema.sql` dosyasını Supabase SQL Editor'de yeniden çalıştırın. İzin kapalıyken editörün yayın isteği `incelemede` durumuna çevrilir; yönetici ayarlarındaki izin açıldığında editör doğrudan yayınlayabilir.
 
 #### B. Kod Yapılandırması
 1. js/config.js dosyasındaki SUPABASE_URL ve SUPABASE_ANON_KEY alanlarını doldurun. (service_role anahtarını asla yazmayın!)

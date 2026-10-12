@@ -31,7 +31,7 @@ function haberGovdesi(haber) {
   const tarih = haber.yayin_tarihi ? new Date(haber.yayin_tarihi).toLocaleDateString("tr-TR") : "";
   const image = safeImage(haber.kapak_gorseli);
   const kapak = haber.kapak_gorseli ? `<img src="${htmlEscape(image)}" alt="${baslik}" class="kart-gorsel" width="1200" height="675" fetchpriority="high">` : "";
-  return `<article class="haber-detay"><h1>${baslik}</h1><p class="soluk-metin">${htmlEscape([tarih, haber.kategori].filter(Boolean).join(" · "))}</p>${kapak}${ozet}<div class="haber-govde-metin">${metin}</div></article>`;
+  return `<article id="haber-icerik-alani" class="haber-detay"><h1>${baslik}</h1><p class="soluk-metin">${htmlEscape([tarih, haber.kategori].filter(Boolean).join(" · "))}</p>${kapak}${ozet}<div class="haber-govde-metin">${metin}</div></article>`;
 }
 
 async function sayfaSablonuOku() {

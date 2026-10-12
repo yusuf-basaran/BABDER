@@ -1,5 +1,6 @@
 import { db } from "../api.js";
 import { el, toastGoster } from "../utils.js";
+import { alanYardimiEkle, panelRehberiniGoster } from "./rehber.js";
 
 export async function guvenlikModulunuYukle(kapsayici) {
   kapsayici.innerHTML = "";
@@ -49,6 +50,7 @@ export async function guvenlikModulunuYukle(kapsayici) {
 
 async function islemKayitlariniGoster(hedef) {
   hedef.innerHTML = "";
+  panelRehberiniGoster(document.getElementById("panel-kullanim-rehberi"), "guvenlik_log", true);
 
   const tabloKapsayici = el("div", { class: "veri-tablosu-kapsayici" });
   const tablo = el("table", { class: "veri-tablosu" }, [
@@ -88,6 +90,7 @@ async function islemKayitlariniGoster(hedef) {
 
 async function kvkkAraclariniGoster(hedef) {
   hedef.innerHTML = "";
+  panelRehberiniGoster(document.getElementById("panel-kullanim-rehberi"), "guvenlik_kvkk", true);
 
   const aramaKarti = el("div", { class: "kart", style: "max-width: 700px; margin-bottom: 1.5rem;" }, [
     el("h3", { text: "KVKK İlgili Kişi Veri Arama" }),
@@ -99,9 +102,11 @@ async function kvkkAraclariniGoster(hedef) {
 
   const aramaGrup = el("div", { style: "display: flex; gap: 0.5rem; margin-top: 1rem;" });
   const aramaInput = el("input", { type: "email", class: "form-denetim", placeholder: "ornek@eposta.com", style: "flex: 1;" });
+  aramaInput.setAttribute("aria-label", "Aranacak kişinin e-posta adresi");
   const araBtn = el("button", { class: "btn btn-ana", text: "Kişiyi Ara" });
   aramaGrup.append(aramaInput, araBtn);
   aramaKarti.appendChild(aramaGrup);
+  alanYardimiEkle(aramaInput, aramaKarti, "guvenlik", "kvkk_eposta", "E-posta");
   hedef.appendChild(aramaKarti);
 
   const sonucAlani = el("div", { id: "kvkk-sonuc-alani" });
@@ -179,6 +184,7 @@ async function kvkkAraclariniGoster(hedef) {
 
 async function copKutusunuGoster(hedef) {
   hedef.innerHTML = "";
+  panelRehberiniGoster(document.getElementById("panel-kullanim-rehberi"), "guvenlik_cop", true);
   const kart = el("div", { class: "kart" }, [
     el("h3", { text: "Silinen Kayıtlar (Çöp Kutusu)" }),
     el("p", { 

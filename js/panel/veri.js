@@ -1,6 +1,7 @@
 import { db } from "../api.js";
 import { el, toastGoster } from "../utils.js";
 import { gorselAlaniniOlustur, gorseliYukle, gorseliWebpSikistir } from "./medya.js";
+import { alanYardimiEkle, panelRehberiniGoster } from "./rehber.js";
 
 const METIN = (name, label, options = {}) => ({ name, label, type: "text", ...options });
 const AREA = (name, label, options = {}) => ({ name, label, type: "textarea", ...options });
@@ -47,7 +48,8 @@ export async function veriModulunuYukle(root, key) {
   const wrap = el("div", { class: "veri-tablosu-kapsayici" });
   const table = el("table", { class: "veri-tablosu" });
   const tbody = el("tbody");
-  table.append(el("thead", {}, [el("tr", {}, [...cfg.columns.map(c => el("th", { text: c })), el("th", { text: "İşlemler" })])]), tbody);
+  const sutunAdlari = { created_at: "Kayıt tarihi", okundu: "Okundu mu?", mesaj: "Mesaj", konu: "Konu", tablo_adi: "Bölüm", kayit_id: "Kayıt numarası", degistiren: "Değiştiren kullanıcı", veri: "Önceki kayıt bilgileri", yayin_tarihi: "Yayın tarihi", eposta: "E-posta", ad_soyad: "Ad soyad" };
+  table.append(el("thead", {}, [el("tr", {}, [...cfg.columns.map(c => el("th", { text: cfg.fields.find(field => field.name === c)?.label || sutunAdlari[c] || c })), el("th", { text: "İşlemler" })])]), tbody);
   wrap.appendChild(table);
   root.appendChild(wrap);
   let rows;
@@ -109,7 +111,7 @@ async function kayitFormu(root, cfg, row = null) {
     catch { toastGoster("Belge listesi alınamadı.", "hata"); return; }
   }
   for (const field of cfg.fields) {
-    const attrs = { name: field.name, class: "form-denetim", required: !field.nullable };
+    const attrs = { name: field.name, class: "form-denetim", required: field.type !== "checkbox" && !field.nullable };
     if (field.type === "textarea") controls[field.name] = el("textarea", { ...attrs, rows: 4, text: row?.[field.name] ?? "" });
     else if (field.type === "select") {
       let options = field.options;
@@ -136,7 +138,12 @@ async function kayitFormu(root, cfg, row = null) {
       }
       controls[field.name] = el("input", inputAttrs);
     }
-    form.appendChild(el("label", { class: "form-grup", style: "display:block;margin:.6rem 0;", text: field.label }, [field.type === "image" ? imageFields[field.name].root : controls[field.name]]));
+    const grup = el("div", { class: "panel-form-alani" }, [el("label", { class: "form-grup", text: field.label }, [field.type === "image" ? imageFields[field.name].root : controls[field.name]])]);
+    const key = Object.keys(MODULLER).find(k => MODULLER[k] === cfg);
+    alanYardimiEkle(controls[field.name], grup, key, field.name, field.label, field.type);
+    if (field.type !== "checkbox") grup.appendChild(el("p", { class: "panel-alan-gereklilik", text: field.nullable ? "İsteğe bağlı: boş bırakabilirsiniz." : "Bu alan zorunludur." }));
+    if (field.type === "image") imageFields[field.name].fileInput.setAttribute("aria-describedby", controls[field.name].getAttribute("aria-describedby"));
+    form.appendChild(grup);
   }
   if (window.BABDER_ROLE === "editor" && yayinDurumTablolari.has(cfg.table) && !editorYayinlayabilir) {
     form.appendChild(el("p", { class: "form-yardim", role: "status", text: "Yayın yetkisi kapalı. Yeni içerikler inceleme durumunda kalır." }));
@@ -218,6 +225,7 @@ async function sil(root, cfg, row) {
 }
 
 async function aidatlarGoster(root, editing = null) {
+  panelRehberiniGoster(document.getElementById("panel-kullanim-rehberi"), "aidatlar", true);
   root.replaceChildren(el("h2", { text: "Aidat Kayıtları" }), el("button", { class: "btn btn-ikincil", text: "Üyelere dön", onclick: () => veriModulunuYukle(root, "uyeler") }));
   let rows, members;
   try {
@@ -239,7 +247,9 @@ async function aidatlarGoster(root, editing = null) {
   const receipt = el("input", { name: "makbuz_no", type: "text", maxLength: 50, value: editing?.makbuz_no || "", class: "form-denetim" });
   const note = el("textarea", { name: "aciklama", maxLength: 2000, text: editing?.aciklama || "", class: "form-denetim" });
   for (const [label, node] of [["Üye", member], ["Yıl", year], ["Ay", month], ["Tutar", amount], ["Ödendi", paid], ["Makbuz numarası", receipt], ["Açıklama", note]]) {
-    form.appendChild(el("label", { class: "form-grup", style: "display:block;margin:.5rem 0;", text: label }, [node]));
+    const grup = el("div", { class: "panel-form-alani" }, [el("label", { class: "form-grup", text: label }, [node])]);
+    alanYardimiEkle(node, grup, "aidatlar", node.name, label);
+    form.appendChild(grup);
   }
   form.appendChild(el("button", { class: "btn btn-ana", type: "submit", text: "Kaydet" }));
   form.addEventListener("submit", async event => {
@@ -299,9 +309,13 @@ async function medyaModulunuYukle(root) {
   const canUpload = ["admin", "editor"].includes(window.BABDER_ROLE);
   const form = el("form", { class: "kart", style: "max-width:700px;margin:1rem 0;" }, [el("h3", { text: "Dosya yükle" })]);
   const bucket = el("select", { class: "form-denetim", name: "bucket" }, [el("option", { value: "gorseller", text: "Görsel" }), el("option", { value: "belgeler", text: "PDF belge" })]);
-  const file = el("input", { class: "form-denetim", type: "file", required: true, accept: "image/jpeg,image/png,image/webp,application/pdf" });
-  const alt = el("input", { class: "form-denetim", type: "text", maxLength: 255, placeholder: "Alternatif metin (isteğe bağlı)" });
-  for (const [label, field] of [["Dosya türü", bucket], ["Dosya", file], ["Alternatif metin", alt]]) form.appendChild(el("label", { class: "form-grup", style: "display:block;margin:.6rem 0;", text: label }, [field]));
+  const file = el("input", { name: "file", class: "form-denetim", type: "file", required: true, accept: "image/jpeg,image/png,image/webp,application/pdf" });
+  const alt = el("input", { name: "alt_metin", class: "form-denetim", type: "text", maxLength: 255, placeholder: "Alternatif metin (isteğe bağlı)" });
+  for (const [label, field] of [["Dosya türü", bucket], ["Dosya", file], ["Alternatif metin", alt]]) {
+    const grup = el("div", { class: "panel-form-alani" }, [el("label", { class: "form-grup", text: label }, [field])]);
+    alanYardimiEkle(field, grup, "medya", field.name, label);
+    form.appendChild(grup);
+  }
   form.appendChild(el("button", { class: "btn btn-ana", type: "submit", text: "Yükle" }));
   form.addEventListener("submit", async event => {
     event.preventDefault();

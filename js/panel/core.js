@@ -7,6 +7,7 @@ import { guvenlikModulunuYukle } from "./guvenlik.js";
 import { veriModulunuYukle } from "./veri.js";
 import { temaYonetiminiBaslat } from "../tema.js";
 import { mfaAkisiniGoster } from "./mfa.js";
+import { panelRehberiniGoster } from "./rehber.js";
 
 const token = sessionStorage.getItem("babder_token");
 if (!token && !window.location.pathname.includes("giris.html")) {
@@ -45,7 +46,10 @@ async function paneliBaslat() {
   komutPaletiniBaslat();
   oturumZamanAsimiDenetle();
   document.getElementById("cikis-btn")?.addEventListener("click", () => db.signOut());
-  document.getElementById("mfa-kurulum-btn")?.addEventListener("click", () => mfaAkisiniGoster(document.getElementById("modul-alani"), () => window.location.reload()));
+  document.getElementById("mfa-kurulum-btn")?.addEventListener("click", () => {
+    panelRehberiniGoster(document.getElementById("panel-kullanim-rehberi"), "mfa", true);
+    mfaAkisiniGoster(document.getElementById("modul-alani"), () => window.location.reload());
+  });
   const menuButton = document.getElementById("panel-menu-tetikleyici");
   const sidebar = document.getElementById("panel-kenar");
   menuButton?.addEventListener("click", () => {
@@ -82,6 +86,7 @@ function modulYonlendir() {
   }
   const modulAlani = document.getElementById("modul-alani");
   const baslik = document.getElementById("aktif-sayfa-baslik");
+  panelRehberiniGoster(document.getElementById("panel-kullanim-rehberi"), hash, true);
 
   document.querySelectorAll(".kenar-menu a").forEach(link => {
     link.classList.toggle("aktif", link.getAttribute("data-modul") === hash);

@@ -3,6 +3,33 @@
   --panel-ust-yukseklik: 64px;
 }
 
+/* Yardım metinleri her ekranda açık ve kolay okunur; tema renklerine uyum sağlar. */
+.panel-rehber {
+  background: var(--renk-yuzey);
+  color: var(--renk-metin);
+  border: 1px solid var(--renk-sinir);
+  border-inline-start: 5px solid var(--renk-ana);
+  border-radius: var(--yuvarlaklik);
+  padding: clamp(1rem, 3vw, 1.5rem);
+  margin-bottom: 1.5rem;
+  font-size: 1.0625rem;
+  line-height: 1.75;
+  overflow-wrap: anywhere;
+}
+.panel-rehber h2 { font-size: 1.25rem; line-height: 1.5; margin-bottom: .65rem; }
+.panel-rehber ol, .panel-rehber ul { padding-inline-start: 1.5rem; margin: .75rem 0; }
+.panel-rehber li { margin: .5rem 0; }
+.panel-rehber-not { padding-top: .75rem; border-top: 1px solid var(--renk-sinir); font-weight: 600; }
+.panel-genel-yardim { margin-top: .75rem; }
+.panel-genel-yardim summary { cursor: pointer; padding: .65rem 0; font-weight: 700; }
+.panel-genel-yardim summary:focus-visible { outline: 3px solid var(--renk-ana); outline-offset: 4px; }
+.panel-form-alani { margin: 1rem 0; }
+.panel-form-alani .form-grup { margin-bottom: .35rem; font-weight: 600; }
+.panel-alan-yardimi, .panel-giris-yardimi { color: var(--renk-metin); font-size: 1rem; line-height: 1.65; margin: .35rem 0 1rem; overflow-wrap: anywhere; }
+.panel-form-alani input:not([type="checkbox"]), .panel-form-alani select, .panel-form-alani textarea { width: 100%; }
+.panel-form-alani input[type="checkbox"] { width: 1.3rem; height: 1.3rem; }
+.panel-alan-gereklilik { font-size: 1rem; margin: -.5rem 0 .75rem; color: var(--renk-metin); }
+
 body.panel-govde {
   display: flex;
   flex-direction: row;

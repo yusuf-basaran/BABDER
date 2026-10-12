@@ -1,5 +1,6 @@
 import { db } from "../api.js";
 import { el, toastGoster } from "../utils.js";
+import { gorselAlaniniOlustur, gorseliYukle } from "./medya.js";
 
 const DURUMLAR = ["taslak", "incelemede", "yayinda", "arsiv"];
 
@@ -55,6 +56,7 @@ export async function haberModulunuYukle(kapsayici) {
 }
 
 function haberFormuAc(kapsayici, haber = null) {
+  const kapakGorseli = gorselAlaniniOlustur(haber?.kapak_gorseli || "");
   const alan = (etiket, ad, deger = "", tur = "input") => {
     const kontrol = tur === "textarea"
       ? el("textarea", { name: ad, class: "form-denetim", required: true, rows: 5, text: deger })
@@ -68,6 +70,7 @@ function haberFormuAc(kapsayici, haber = null) {
     alan("İçerik", "icerik", haber?.icerik || "", "textarea"),
     alan("Kategori", "kategori", haber?.kategori || "Genel"),
     alan("Slug", "slug", haber?.slug || ""),
+    el("label", { style: "display:grid;gap:.35rem;margin:.75rem 0;", text: "Kapak görseli" }, [kapakGorseli.root]),
     el("label", { style: "display:grid;gap:.35rem;margin:.75rem 0;", text: "Durum" }, [
       el("select", { name: "durum", class: "form-denetim" }, DURUMLAR.map(d => el("option", { value: d, text: d, selected: (haber?.durum || "taslak") === d })))
     ]),
@@ -79,6 +82,7 @@ function haberFormuAc(kapsayici, haber = null) {
   form.addEventListener("submit", async event => {
     event.preventDefault();
     const data = Object.fromEntries(new FormData(form).entries());
+    data.kapak_gorseli = kapakGorseli.urlInput.value.trim() || null;
     data.slug = data.slug.trim().toLocaleLowerCase("tr-TR").replace(/[^a-z0-9-]+/g, "-").replace(/^-+|-+$/g, "");
     if (!data.slug) {
       toastGoster("Geçerli bir URL kısa adı girin.", "hata");
@@ -86,13 +90,19 @@ function haberFormuAc(kapsayici, haber = null) {
     }
     const submit = form.querySelector('[type="submit"]');
     submit.disabled = true;
+    let uploadedImage = null;
     try {
+      if (kapakGorseli.fileInput.files?.[0]) {
+        uploadedImage = await gorseliYukle(kapakGorseli.fileInput.files[0]);
+        data.kapak_gorseli = uploadedImage.url;
+      }
       if (haber) await db.update("haberler", haber.id, data);
       else await db.insert("haberler", data);
       toastGoster(haber ? "Haber güncellendi." : "Haber oluşturuldu.", "basari");
       await haberModulunuYukle(kapsayici);
-    } catch {
-      toastGoster("Kaydetme başarısız. Slug benzersiz mi ve yayın yetkiniz var mı kontrol edin.", "hata");
+    } catch (error) {
+      if (uploadedImage) await db.removeStorageObject(uploadedImage.bucket, uploadedImage.objectPath).catch(() => {});
+      toastGoster(error.message || "Kaydetme başarısız. Slug benzersiz mi ve yayın yetkiniz var mı kontrol edin.", "hata");
       submit.disabled = false;
     }
   });

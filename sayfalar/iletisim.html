@@ -75,10 +75,10 @@
       <form id="iletisim-formu" class="kart">
         <h2 class="kart-baslik">Bize Ulaşın</h2>
         <div class="bal-kupugu" aria-hidden="true"><input type="text" id="guvenlik_kodu" tabindex="-1"></div>
-        <div class="form-grup"><label for="iletisim_ad">Adınız Soyadınız *</label><input type="text" id="iletisim_ad" class="form-denetim" required></div>
-        <div class="form-grup"><label for="iletisim_eposta">E-Posta Adresiniz *</label><input type="email" id="iletisim_eposta" class="form-denetim" required></div>
-        <div class="form-grup"><label for="iletisim_konu">Konu *</label><input type="text" id="iletisim_konu" class="form-denetim" required></div>
-        <div class="form-grup"><label for="iletisim_mesaj">Mesajınız *</label><textarea id="iletisim_mesaj" class="form-denetim" rows="5" required minlength="10"></textarea></div>
+        <div class="form-grup"><label for="iletisim_ad">Adınız Soyadınız *</label><input type="text" id="iletisim_ad" class="form-denetim" required minlength="3" maxlength="100"></div>
+        <div class="form-grup"><label for="iletisim_eposta">E-Posta Adresiniz *</label><input type="email" id="iletisim_eposta" class="form-denetim" required maxlength="150"></div>
+        <div class="form-grup"><label for="iletisim_konu">Konu *</label><input type="text" id="iletisim_konu" class="form-denetim" required minlength="2" maxlength="150"></div>
+        <div class="form-grup"><label for="iletisim_mesaj">Mesajınız *</label><textarea id="iletisim_mesaj" class="form-denetim" rows="5" required minlength="10" maxlength="5000"></textarea></div>
         <div class="form-grup"><label><input type="checkbox" id="iletisim_kvkk" required> <a href="./kvkk.html" target="_blank" rel="noopener noreferrer">Aydınlatma Metni</a>'ni onaylıyorum.</label></div>
         <button type="submit" class="btn btn-ana">Gönder</button>
         <div id="mesaj-durum"></div>
@@ -128,6 +128,7 @@
         mesaj: document.getElementById("iletisim_mesaj").value.trim(),
         kvkk_onay: document.getElementById("iletisim_kvkk").checked
       };
+      veri.eposta = veri.eposta.toLocaleLowerCase("en-US");
       try {
         await db.insert("iletisim_mesajlari", veri);
         document.getElementById("mesaj-durum").textContent = "Mesajınız iletildi.";

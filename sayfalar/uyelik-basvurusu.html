@@ -25,27 +25,27 @@
 
       <div class="form-grup">
         <label for="ad_soyad">Adınız Soyadınız *</label>
-        <input type="text" id="ad_soyad" class="form-denetim" required minlength="3">
+        <input type="text" id="ad_soyad" class="form-denetim" required minlength="3" maxlength="100">
       </div>
 
       <div class="form-grup">
         <label for="telefon">Telefon Numaranız *</label>
-        <input type="tel" id="telefon" class="form-denetim" required placeholder="05XXXXXXXXX" minlength="10">
+        <input type="tel" id="telefon" class="form-denetim" required placeholder="05XXXXXXXXX" minlength="10" maxlength="20">
       </div>
 
       <div class="form-grup">
         <label for="eposta">E-Posta Adresiniz *</label>
-        <input type="email" id="eposta" class="form-denetim" required>
+        <input type="email" id="eposta" class="form-denetim" required maxlength="150">
       </div>
 
       <div class="form-grup">
         <label for="koy_bagi">Köy Bağı / İrtibat *</label>
-        <input type="text" id="koy_bagi" class="form-denetim" required placeholder="Kapıkaya Bab Köyü vb.">
+        <input type="text" id="koy_bagi" class="form-denetim" required maxlength="100" placeholder="Kapıkaya Bab Köyü vb.">
       </div>
 
       <div class="form-grup">
         <label for="mesaj">Varsa Eklemek İstedikleriniz</label>
-        <textarea id="mesaj" class="form-denetim" rows="4"></textarea>
+        <textarea id="mesaj" class="form-denetim" rows="4" maxlength="2000"></textarea>
       </div>
 
       <div class="form-grup" style="flex-direction: row; align-items: flex-start; gap: 0.5rem;">
@@ -80,6 +80,7 @@
         mesaj: document.getElementById("mesaj").value.trim(),
         kvkk_onay: document.getElementById("kvkk_onay").checked
       };
+      veri.eposta = veri.eposta.toLocaleLowerCase("en-US");
 
       try {
         await db.insert("uyelik_basvurulari", veri);

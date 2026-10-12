@@ -51,7 +51,9 @@ async function genelAyarlariGoster(hedef) {
   hedef.innerHTML = "";
   const form = el("form", { class: "kart", style: "max-width: 750px;" });
 
-  const ayarlar = await db.select("ayarlar");
+  let ayarlar;
+  try { ayarlar = await db.select("ayarlar"); }
+  catch { hedef.appendChild(el("p", { class: "kart", text: "Ayarlar yüklenemedi. Admin yetkisini ve bağlantıyı kontrol edin." })); return; }
   const ayarHarita = {};
   if (ayarlar) {
     ayarlar.forEach(a => ayarHarita[a.anahtar] = a.deger);
@@ -109,7 +111,9 @@ async function hukukiMetinleriGoster(hedef) {
     style: "font-size: 0.85rem; color: var(--renk-vurgu-koyu); margin-bottom: 1rem;"
   }));
 
-  const metinler = await db.select("hukuki_metinler", "aktif=eq.true");
+  let metinler;
+  try { metinler = await db.select("hukuki_metinler", "aktif=eq.true"); }
+  catch { kapsayici.appendChild(el("p", { text: "Hukuki metinler yüklenemedi. Admin yetkisi gerekir." })); hedef.appendChild(kapsayici); return; }
 
   if (!metinler || metinler.length === 0) {
     kapsayici.appendChild(el("p", { text: "Henüz kayıtlı hukuki metin bulunamadı." }));
@@ -170,7 +174,9 @@ async function bakimAyarlariniGoster(hedef) {
     style: "font-size: 0.85rem; color: var(--renk-metin-soluk); margin: 0.5rem 0 1rem 0;"
   }));
 
-  const ayarlar = await db.select("ayarlar", "anahtar=in.(bakim_modu,bakim_mesaji)");
+  let ayarlar;
+  try { ayarlar = await db.select("ayarlar", "anahtar=in.(bakim_modu,bakim_mesaji)"); }
+  catch { kart.appendChild(el("p", { text: "Bakım ayarları yüklenemedi." })); hedef.appendChild(kart); return; }
   let aktif = false;
   let mesaj = "";
   if (ayarlar) {

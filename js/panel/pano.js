@@ -25,18 +25,33 @@ export async function panoModulunuYukle(kapsayici) {
   ]);
   kapsayici.appendChild(grafikKarti);
 
-  const basvurular = await db.select("uyelik_basvurulari", "durum=eq.yeni");
-  const mesajlar = await db.select("iletisim_mesajlari", "okundu=eq.false");
-  const haberler = await db.select("haberler", "durum=eq.yayinda");
-
-  document.getElementById("sayac-basvuru").textContent = basvurular ? basvurular.length : "0";
-  document.getElementById("sayac-mesaj").textContent = mesajlar ? mesajlar.length : "0";
-  document.getElementById("sayac-icerik").textContent = haberler ? haberler.length : "0";
-
-  svgGrafigiCiz(document.getElementById("svg-grafik-kapsayici"), [4, 8, 15, 12, 22, 18]);
+  try {
+    const haberler = await db.select("haberler", "durum=eq.yayinda&deleted_at=is.null");
+    let basvurular = [];
+    let mesajlar = [];
+    if (window.BABDER_ROLE !== "goruntuleyici") {
+      [basvurular, mesajlar] = await Promise.all([
+        db.select("uyelik_basvurulari", "deleted_at=is.null"),
+        db.select("iletisim_mesajlari", "okundu=eq.false&deleted_at=is.null")
+      ]);
+    }
+    document.getElementById("sayac-basvuru").textContent = window.BABDER_ROLE === "goruntuleyici" ? "—" : basvurular.filter(row => row.durum === "yeni").length;
+    document.getElementById("sayac-mesaj").textContent = window.BABDER_ROLE === "goruntuleyici" ? "—" : mesajlar.length;
+    document.getElementById("sayac-icerik").textContent = haberler.length;
+    const start = new Date();
+    start.setDate(1);
+    start.setMonth(start.getMonth() - 5);
+    const months = Array.from({ length: 6 }, (_, i) => { const d = new Date(start); d.setMonth(start.getMonth() + i); return d; });
+    const counts = months.map(month => basvurular.filter(row => { const d = new Date(row.created_at); return d.getFullYear() === month.getFullYear() && d.getMonth() === month.getMonth(); }).length);
+    const labels = months.map(month => month.toLocaleDateString("tr-TR", { month: "short" }));
+    svgGrafigiCiz(document.getElementById("svg-grafik-kapsayici"), counts, labels);
+  } catch {
+    document.getElementById("svg-grafik-kapsayici").textContent = "Pano verileri yüklenemedi. Veritabanı izinlerini ve bağlantıyı kontrol edin.";
+    ["sayac-basvuru", "sayac-mesaj", "sayac-icerik"].forEach(id => document.getElementById(id).textContent = "—");
+  }
 }
 
-function svgGrafigiCiz(hedef, veriler) {
+function svgGrafigiCiz(hedef, veriler, etiketler) {
   const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
   svg.setAttribute("viewBox", "0 0 500 150");
   svg.setAttribute("width", "100%");
@@ -67,8 +82,17 @@ function svgGrafigiCiz(hedef, veriler) {
     text.setAttribute("fill", "#4A5A4E");
     text.textContent = deger;
 
+    const label = document.createElementNS("http://www.w3.org/2000/svg", "text");
+    label.setAttribute("x", x + cubukGenislik / 2);
+    label.setAttribute("y", 147);
+    label.setAttribute("text-anchor", "middle");
+    label.setAttribute("font-size", "11");
+    label.setAttribute("fill", "#4A5A4E");
+    label.textContent = etiketler?.[indis] || "";
+
     svg.appendChild(rect);
     svg.appendChild(text);
+    svg.appendChild(label);
   });
 
   hedef.appendChild(svg);

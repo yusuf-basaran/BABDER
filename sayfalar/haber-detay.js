@@ -1,7 +1,10 @@
+import { iskeletleYukle } from "../js/iskelet.js";
 import { db } from "../js/api.js";
 import { el, guvenliMetinAyristir } from "../js/utils.js";
 
-document.addEventListener("DOMContentLoaded", async () => {
+document.addEventListener("DOMContentLoaded", () => iskeletleYukle(document.getElementById("haber-icerik-alani"), haberDetayiniYukle, "haber", 1));
+
+async function haberDetayiniYukle() {
   const urlParams = new URLSearchParams(window.location.search);
   const routeSlug = window.location.pathname.match(/^\/haber\/([a-z0-9-]+)\/?$/)?.[1];
   const slug = urlParams.get("slug") || routeSlug;
@@ -66,4 +69,4 @@ document.addEventListener("DOMContentLoaded", async () => {
     " · ",
     el("a", { href: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`, text: "Facebook'ta paylaş", target: "_blank", rel: "noopener noreferrer" })
   ]));
-});
+}

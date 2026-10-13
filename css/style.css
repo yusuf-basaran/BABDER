@@ -27,6 +27,20 @@
   --golge: 0 4px 12px rgba(20, 97, 44, 0.08);
 }
 
+/* Skeleton Screen: açık/koyu temada hafif yükleme yer tutucuları. */
+.iskelet-kart { min-width: 0; width: 100%; padding: 1.25rem; background: var(--renk-yuzey); border: 1px solid var(--renk-sinir); border-radius: var(--yuvarlaklik); }
+.iskelet-govde { display: grid; gap: .8rem; }
+.iskelet-parca { position: relative; overflow: hidden; background: var(--renk-sinir); border-radius: 6px; }
+.iskelet-parca::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, transparent, var(--renk-yuzey), transparent); opacity: .6; transform: translateX(-100%); animation: iskelet-parilti 1.8s ease-in-out infinite; }
+.iskelet-gorsel { aspect-ratio: 16 / 9; width: 100%; }
+.iskelet-baslik { height: 1.5rem; width: 75%; }
+.iskelet-satir { height: 1rem; width: 100%; }
+.iskelet-kisa { height: 1rem; width: 55%; }
+.iskelet-haber .iskelet-gorsel { max-height: 450px; }
+.iskelet-erisebilir { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
+@keyframes iskelet-parilti { to { transform: translateX(100%); } }
+@media (prefers-reduced-motion: reduce) { .iskelet-parca::after { animation: none; display: none; } }
+
 [data-tema="koyu"] {
   --renk-zemin: #101A14;
   --renk-yuzey: #172219;

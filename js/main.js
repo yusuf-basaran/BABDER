@@ -1,3 +1,4 @@
+import { iskeletleYukle } from "./iskelet.js";
 import { db } from "./api.js";
 import { el, guvenliMetinAyristir } from "./utils.js";
 import { temaYonetiminiBaslat } from "./tema.js";
@@ -56,16 +57,16 @@ function menuAnahtari(value) {
 
 async function publicIcerikleriYukle() {
   const tasks = [];
-  if (document.getElementById("son-haberler-izgara") || document.getElementById("haber-listesi")) tasks.push(haberleriYukle());
-  if (document.getElementById("etkinlikler-izgara") || document.getElementById("etkinlik-listesi")) tasks.push(etkinlikleriYukle());
+  if (document.getElementById("son-haberler-izgara") || document.getElementById("haber-listesi")) tasks.push(iskeletleYukle("#son-haberler-izgara, #haber-listesi", haberleriYukle, "kart", 3));
+  if (document.getElementById("etkinlikler-izgara") || document.getElementById("etkinlik-listesi")) tasks.push(iskeletleYukle("#etkinlikler-izgara, #etkinlik-listesi, #etkinlik-ay-gorunumu", etkinlikleriYukle, "kart", 3));
   if (document.getElementById("duyuru-bandi")) tasks.push(duyurulariYukle());
-  if (document.getElementById("anasayfa-dinamik-bolumler")) tasks.push(anasayfaBolumleriniYukle());
-  if (document.getElementById("galeri-listesi")) tasks.push(galeriyiYukle());
-  if (document.getElementById("koy-listesi")) tasks.push(koyleriYukle());
-  if (document.getElementById("kurul-listesi")) tasks.push(kuruluYukle());
-  if (document.getElementById("belge-listesi")) tasks.push(belgeleriYukle());
+  if (document.getElementById("anasayfa-dinamik-bolumler")) tasks.push(iskeletleYukle("#anasayfa-dinamik-bolumler", anasayfaBolumleriniYukle, "metin", 3));
+  if (document.getElementById("galeri-listesi")) tasks.push(iskeletleYukle("#galeri-listesi", galeriyiYukle, "kart", 3));
+  if (document.getElementById("koy-listesi")) tasks.push(iskeletleYukle("#koy-listesi", koyleriYukle, "kart", 3));
+  if (document.getElementById("kurul-listesi")) tasks.push(iskeletleYukle("#kurul-listesi", kuruluYukle, "kart", 3));
+  if (document.getElementById("belge-listesi")) tasks.push(iskeletleYukle("#belge-listesi", belgeleriYukle, "metin", 3));
   if (document.getElementById("hukuki-metin")) tasks.push(hukukiMetniYukle());
-  if (document.getElementById("cms-sayfa-bolumleri") || location.pathname.endsWith("/sayfa.html")) tasks.push(cmsSayfasiniYukle());
+  if (document.getElementById("cms-sayfa-bolumleri") || location.pathname.endsWith("/sayfa.html")) tasks.push(iskeletleYukle("#cms-sayfa-bolumleri", cmsSayfasiniYukle, "metin", 1));
   await Promise.allSettled(tasks);
 }
 

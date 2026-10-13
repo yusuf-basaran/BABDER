@@ -1,8 +1,9 @@
+import { iskeletleYukle } from "./iskelet.js";
 import { db } from "./api.js";
 import { el, guvenliMetinAyristir } from "./utils.js";
 
 export async function ekIcerikleriYukle() {
-  await Promise.allSettled([taziyeleriYukle(), kampanyalariYukle()]);
+  await Promise.allSettled([iskeletleYukle("[data-taziyeler]", taziyeleriYukle, "metin"), iskeletleYukle("#kampanya-listesi, #faaliyet-raporlari", kampanyalariYukle)]);
 }
 
 async function taziyeleriYukle() {

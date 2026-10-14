@@ -1,54 +1,77 @@
 # BABDER
 
-Şanlıurfa Siverek Kapıkaya Bab Köyü ve Köyleri Sosyal Yardımlaşma ve Dayanışma Derneği için saf HTML/CSS/ES modules web sitesi ve Supabase yönetim paneli.
+Şanlıurfa Siverek Kapıkaya Bab Köyü ve Köyleri Sosyal Yardımlaşma ve Dayanışma Derneği web sitesi ve yönetim paneli.
 
-## Mimari
+- Site: https://babder.vercel.app
+- Yönetim: https://babder.vercel.app/yonetim/giris
 
-```mermaid
-flowchart LR
-  GENEL[Genel sayfalar] --> REST[Supabase REST ve RLS]
-  PANEL[Yönetim paneli] --> AUTH[Auth, TOTP ve roller]
-  PANEL --> STORAGE[Supabase Storage]
-  FORM[Genel formlar] --> EDGE[Edge Function]
-  EDGE --> CAPTCHA[Turnstile doğrulaması]
-  EDGE --> LIMIT[IP özeti ve hız sınırı]
-  EDGE --> DB[Form kayıtları]
-  BUILD[Node build] --> HTML[Ortak layout, SEO ve sitemap]
-  HABER[Vercel haber fonksiyonu] --> REST
+## Proje yapısı
+
+Site HTML, CSS ve JavaScript modüllerinden oluşur. Supabase kullanıcı hesaplarını, içerikleri ve dosyaları saklar. Vercel siteyi yayımlar ve haber detaylarını sunucu tarafında oluşturur.
+
+| Dizin | İçerik |
+|---|---|
+| `sayfalar/` | Genel site sayfaları |
+| `yonetim/` | Yönetici girişi ve panel |
+| `js/panel/` | Panel ekranları ve kullanım açıklamaları |
+| `partials/` | Ortak üst menü, alt bilgi ve çerez bildirimi |
+| `css/` | Site ve panel stilleri |
+| `api/` | Haber detaylarını oluşturan Vercel fonksiyonu |
+| `supabase/` | Veritabanı şeması ve form fonksiyonu |
+| `scripts/` | Dağıtım ve kontrol araçları |
+| `dist/` | Build sırasında üretilen yayın dosyaları |
+
+## Yerel kurulum
+
+Node.js 22 veya üzeri ve pnpm kullanılır.
+
+```sh
+pnpm install --frozen-lockfile
+pnpm run build
+node scripts/serve.mjs
 ```
 
-`partials/` header, footer ve çerez alanının tek kaynağıdır. Build bunları statik HTML'e yerleştirir; tarayıcıda layout yüklenmesini beklemek gerekmez. Sayfaların başlık, meta açıklaması ve H1 değerleri kendi HTML'lerinde kalır. `dist/` üretilen dağıtım dizinidir.
+Yerel önizleme adresi `http://127.0.0.1:4173` şeklindedir. Bu sunucu statik dosyaları sunar; Vercel haber fonksiyonunu çalıştırmaz. Ortak sayfa parçaları ve SEO etiketleri build sırasında oluşturulur.
 
-## Kurulum ve dağıtım
+## Supabase kurulumu
 
-1. `js/config.js` içindeki Supabase URL ve mevcut anon anahtarını doğrulayın. service_role anahtarını istemci koduna eklemeyin.
-2. `SITE_URL` şu an `https://babder.vercel.app` olarak ayarlıdır. Canonical, Open Graph ve sitemap buradan üretilir. `babder.org` alındığında bu değeri, Turnstile domain izinlerini ve `FORM_ALLOWED_ORIGINS` ayarını güncelleyin.
-3. Supabase Auth'ta yeni kullanıcı kaydını kapatın. Auth Users üzerinden yöneticileri oluşturup UUID'lerini `yoneticiler` tablosuna admin/editor/goruntuleyici rolüyle ekleyin.
-4. Supabase TOTP'nin açık olduğunu doğrulayın. Admin girişinde kurulum anahtarını doğrulama uygulamasına ekleyip altı haneli kodu girin. Editör paneldeki iki adımlı doğrulama düğmesiyle isteğe bağlı kurulum yapabilir.
-5. Cloudflare Turnstile widget oluşturun, domain izinlerini ayarlayın ve halka açık site anahtarını `TURNSTILE_SITE_KEY` değerine yazın.
-6. Supabase secrets alanında `TURNSTILE_SECRET_KEY`, güçlü rastgele `FORM_IP_SALT` ve virgülle ayrılmış tam HTTPS adreslerinden oluşan `FORM_ALLOWED_ORIGINS` tanımlayın. SUPABASE_URL ve SUPABASE_SERVICE_ROLE_KEY yalnızca fonksiyon ortamından alınır.
-7. `supabase functions deploy form-gonder` ile fonksiyonu dağıtın. Origin, Turnstile hostname/action, alanlar ve KVKK onayı doğrulanır. Gateway'in eklediği son X-Forwarded-For adresinin tuzlanmış SHA-256 özetiyle saatlik 5 istek sınırı atomik uygulanır; IP açık metin olarak saklanmaz.
-8. Mevcut verileri yedekledikten sonra güncel `supabase/schema.sql` dosyasını SQL Editor'de çalıştırın. Bu SQL yeni tabloları/RLS/trigger'ları oluşturur, anonim form INSERT izinlerini kaldırır ve admin işlemlerinde AAL2 ister. Tekrar çalıştırılabilir tanımlanmıştır.
-9. `pnpm install --frozen-lockfile` ve `pnpm run build` çalıştırın. Build yalnızca Node standart kütüphanesini kullanır; dev bağımlılıklar kalite kontrolleri içindir. Vercel aynı build'i çalıştırıp `dist/` dizinini yayımlar.
+1. Mevcut verileri yedekleyin. `supabase/schema.sql` dosyasını SQL Editor üzerinden çalıştırın.
+2. `js/config.js` içindeki Supabase proje adresi ve halka açık anon anahtarının doğru projeye ait olduğunu kontrol edin.
+3. Authentication bölümünden yönetici hesaplarını oluşturun. Kullanıcı UUID, ad, rol ve aktiflik bilgisini `yoneticiler` tablosuna ekleyin. Halka açık kullanıcı kaydını kapatın.
+4. Admin hesaplarında TOTP iki adımlı doğrulama kullanılır. İlk girişte kurulum anahtarını doğrulama uygulamasına zamana dayalı hesap olarak ekleyin. Editörler panel üzerinden isteğe bağlı kurulum yapabilir.
+5. Cloudflare Turnstile widget'ının hostname listesine `babder.vercel.app` ekleyin. Site key değerini `js/config.js` içindeki `TURNSTILE_SITE_KEY` alanına yazın.
+6. Edge Function Secrets bölümünde aşağıdaki ayarları tanımlayın.
+7. `supabase/functions/form-gonder/index.ts` dosyasını `form-gonder` adıyla dağıtın. Bu fonksiyonda JWT doğrulaması kapalı olmalıdır; CLI yapılandırması `supabase/config.toml` içindedir. Dashboard üzerinden dağıtımda ayarı ayrıca kontrol edin.
 
-`/haber/:slug` Vercel fonksiyonu yalnızca yayımlanmış haberleri getirir, slug'ı doğrular ve HTML escape ile başlık/paylaşım etiketlerini üretir. Bulunmayan haber 404 döndürür. `node scripts/serve.mjs` yalnızca statik yerel önizleme sunar; Vercel haber fonksiyonunu çalıştırmaz.
+| Secret | Kullanım |
+|---|---|
+| `TURNSTILE_SECRET_KEY` | Widget'ın sunucu doğrulama anahtarı |
+| `FORM_IP_SALT` | IP özeti üretmek için güçlü rastgele gizli değer |
+| `FORM_ALLOWED_ORIGINS` | İzin verilen tam site adresleri; mevcut değer `https://babder.vercel.app` |
 
-## İçerik ve yetkiler
+`SUPABASE_URL` ve `SUPABASE_SERVICE_ROLE_KEY` fonksiyon ortamından alınır. Gizli anahtarlar istemci koduna veya Git deposuna yazılmaz. Form gönderimleri Turnstile, origin, alan ve KVKK kontrollerinden geçer; saatlik sınır IP özeti başına beş istektir.
 
-Panel haber, duyuru, etkinlik, taziye, kampanya, CMS sayfası/bölümü, ana sayfa, menü, köy, kurul, albüm, galeri, belge, başvuru, mesaj, üye, aidat ve medya yönetimini içerir. Roller RLS ile sınırlandırılır. `editor_yayinlayabilir` kapalıyken editörün yeni yayın isteği incelemeye çevrilir.
+## Vercel yayını
 
-- Taziye yayını aile izni gerektirir; panel ve veritabanı bunu kontrol eder.
-- Kampanya tutarları panelden girilir. Gerçek mali bilgiler ve gerekli faaliyet izinleri yönetim tarafından doğrulanmalıdır.
-- Faaliyet raporları Belgeler modülünde `faaliyet_raporu` kategorisiyle eklenir. Genel kurul/toplantı kaydında gündem ve tutanak belgesi seçilebilir.
-- Köy koordinatları OpenStreetMap bağlantısı oluşturur. Harita gömmesi bulunmadığı için dış harita kaynağı CSP'ye eklenmez.
-- SSS ve üyelik rehberi için `sss` ve `nasil-uye-olurum` slug'larıyla CMS sayfaları ve bölümleri oluşturun. Başlangıç içeriği uydurulmamıştır.
-- Sosyal bağlantılar ayarlardan yönetilir ve yalnızca HTTPS adresleri gösterilir.
-- JPEG/PNG/WebP görseller tarayıcıda en uzun kenarı 1600 px'e indirilip WebP oluşturulur. Yüklenen çıktı 3 MB sınırını geçemez.
-- KVKK ekranı veri arama, dışa aktarma ve onaydan sonra silme sunar; silinen kayıt sayıları ekranda gösterilir.
+GitHub deposunu Vercel projesine bağlayın ve üretim dalını `main` olarak ayarlayın. `vercel.json`, build komutunu `npm run build` ve çıktı dizinini `dist` olarak tanımlar.
 
-Kaynak logo `img/kaynak/logo.png` altında saklanır. Header 96 px WebP kullanır; 192 px logo, favicon'lar, Apple ikonu ve 1200×630 paylaşım görseli `img/` içindedir. Büyük kaynak logo dağıtım çıktısına eklenmez.
+`SITE_URL` canonical bağlantılar, paylaşım etiketleri, sitemap ve robots dosyaları için kullanılır. Özel alan adına geçerken bu değerle birlikte Turnstile hostname ve `FORM_ALLOWED_ORIGINS` ayarlarını güncelleyin. Build yayımlanmış haberlerin bağlantılarını sitemap'e ekler. `/haber/:slug` rotası yayımlanmış haberleri sunar; bulunmayan haberlerde 404 döner.
 
-## Kalite kontrolleri
+## İçerik yönetimi
+
+Panelin her bölümünde kullanım adımları ve alan açıklamaları bulunur. Genel içeriklerde Taslak hazırlık, İncelemede yönetici kontrolü, Yayında ziyaretçi erişimi, Arşiv ise yayından kaldırma durumudur. Editörlerin doğrudan yayın yetkisi Site Ayarları bölümünden belirlenir.
+
+- Haber, duyuru, etkinlik, taziye, kampanya, köy ve kurul kayıtları ilgili panel bölümlerinden yönetilir. Taziye yayını aile izni gerektirir.
+- Sayfalar bölümünde sayfa kaydı oluşturulur; metinleri Sayfa Bölümleri bölümünden eklenir. SSS için `sss`, üyelik rehberi için `nasil-uye-olurum` kısa adı kullanılır.
+- Belgeler ve etkinlik tutanaklarında mevcut URL veya cihazdan PDF seçilebilir. PDF sınırı 10 MB'dır. Faaliyet raporlarının kategorisi `faaliyet_raporu` olarak yazılır.
+- Görsel alanları URL ve cihazdan yükleme sunar. JPEG, PNG ve WebP dosyaları en uzun kenarı 1600 px olacak şekilde WebP'ye dönüştürülür; çıktı sınırı 3 MB'dır. Medya Kütüphanesinde görsel giriş sınırı 3 MB, içerik formlarında 10 MB'dır.
+- Medya Kütüphanesine URL eklemek dış dosyanın kopyasını yüklemez. Dosya silmeden önce onu kullanan içerikleri kontrol edin.
+- Başvuru onayı otomatik üye oluşturmaz. Üye kaydı ayrıca açılır. Aidat ekranı ödeme takibi içindir; banka tahsilatı yapmaz.
+- Köy koordinatları harita bağlantısı oluşturur. Etkinlikler takvimde gösterilir ve ICS dosyası olarak indirilebilir.
+- KVKK araçları e-posta ile kişisel kayıt arama, dışa aktarma ve kalıcı silme işlemlerini sunar.
+- Genel hukuki sayfalar sabit HTML metni kullanır. Panelde hukuki metin kaydını değiştirmek bu sayfaları otomatik güncellemez; yayın dosyaları ayrıca düzenlenmelidir.
+
+## Bakım ve kontroller
 
 ```sh
 pnpm run build
@@ -57,23 +80,6 @@ pnpm exec lhci collect
 pnpm exec lhci assert
 ```
 
-CI HTML doğrulaması, yerel dosya/modül bağlantıları, Deno typecheck ve Lighthouse çalıştırır. Eşikler performans 90, erişilebilirlik 95, SEO 95'tir. Raporlar GitHub Actions artifact olarak saklanır. Alan adı değiştirildiğinde canonical adresleri ve sitemap yeni build ile güncellenir.
+GitHub Actions HTML doğrulaması, yerel dosya bağlantıları, Deno kontrolü ve Lighthouse ölçümlerini çalıştırır. Lighthouse eşikleri performans için 90, erişilebilirlik ve SEO için 95'tir.
 
-Yerel build, HTML, bağlantı ve JavaScript kontrolleri çalıştırılmıştır. Haber SSR ve Edge Function akışları sahte verilerle kontrol edilmiştir. Canlı SQL uygulaması, Turnstile ve TOTP oturumu test edilmedi; dağıtım sonrasında kontrol edilmelidir.
-
-## Yayın öncesi kontrol listesi
-
-- [x] SITE_URL mevcut yayın adresi `https://babder.vercel.app` olarak ayarlandı.
-- [ ] Adres, telefon, e-posta, kütük no, IBAN, banka ve hesap sahibi tamamlandı.
-- [ ] Turnstile anahtarları, domain/origin izinleri ve fonksiyon secrets tanımlandı.
-- [ ] Edge Function dağıtıldı, SQL uygulandı, admin TOTP girişi denendi.
-- [ ] Formlar, doğrulama hatası ve hız sınırı denendi.
-- [ ] Hukuki metinler uzman tarafından onaylandı; bu çalışma metinleri yeniden yazmadı.
-- [ ] Bakım modu açılıp kapatıldı.
-- [ ] Panel içeriği/görseli ana sayfa ve ilgili sayfada kontrol edildi.
-- [ ] Haber paylaşım önizlemesi ve .ics indirmesi kontrol edildi.
-- [ ] CI ve Vercel kontrolleri sonuçlandı.
-
-## Ekran görüntüleri
-
-Doğrulanmış yayından ana sayfa, mobil menü, yönetim paneli ve içerik formu ekran görüntüleri bu bölüme eklenebilir.
+Yayın değişikliklerinden sonra yönetici girişini, form gönderimini, görsel/PDF yüklemesini ve içeriklerin genel sayfalarda görünmesini kontrol edin. Bakım modu geçici olarak açıldıysa iş bitiminde kapatın. Dernek iletişim, banka ve hukuki bilgilerini güncel tutun.
